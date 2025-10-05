@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/problem.dart';
-import '../../models/genre.dart';
-import '../../models/session_summary.dart';
-import '../../services/problem_generator_service.dart';
-import '../../services/local_storage_service.dart';
-import '../../features/results/screens/results_screen.dart';
+import '../../../models/problem.dart';
+import '../../../models/genre.dart';
+import '../../../models/session_summary.dart';
+import '../../../models/session_result.dart';
+import '../../../services/problem_generator_service.dart';
+import '../../../services/local_storage_service.dart';
+import '../../results/screens/results_screen.dart' as results;
 
 class ProblemSessionState {
   final Problem? currentProblem;
@@ -338,7 +339,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     Navigator.pushReplacement(
       _context,
       MaterialPageRoute(
-        builder: (context) => ResultsScreen(
+        builder: (context) => results.ResultsScreen(
           sessionResults: state.sessionResults,
         ),
       ),

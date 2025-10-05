@@ -44,7 +44,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'What is ${_formatNumber(a)} + ${_formatNumber(b)}?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -62,7 +62,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'What is ${_formatNumber(larger)} - ${_formatNumber(smaller)}?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -94,7 +94,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'What is ${_formatNumber(a)} / ${_formatNumber(b)}?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -106,7 +106,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'What is $percentage% of \$${_formatNumber(number)}?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -118,7 +118,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'What percentage is ${_formatNumber(a)} of ${_formatNumber(b)}?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -136,7 +136,7 @@ class ProblemGeneratorService {
     final changeType = isIncrease ? 'increase' : 'decrease';
     return Problem(
       questionText: 'After a $percentage% $changeType, revenue is \$${_formatNumber(newValue)}. What was the original revenue?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -149,7 +149,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'If sales went from \$${_formatNumber(oldValue)} to \$${_formatNumber(newValue.round())}, what was the growth rate?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -160,7 +160,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'If a market grows at $rate% annually, how many years will it take to double?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -173,7 +173,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'With fixed costs of \$${_formatNumber(fixedCosts)}, a price of \$${_formatNumber(price)}, and variable costs of \$${_formatNumber(variableCost)}, what is the breakeven volume?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   
@@ -187,7 +187,7 @@ class ProblemGeneratorService {
     
     return Problem(
       questionText: 'A company sells $w1% of units for \$${_formatNumber(v1)} and $w2% for \$${_formatNumber(v2)}. What is the weighted average price?',
-      actualAnswer: answer,
+      actualAnswer: answer.toDouble(),
     );
   }
   

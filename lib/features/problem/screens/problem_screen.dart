@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/custom_keypad.dart';
 import '../view_models/problem_view_model.dart';
-import '../../models/genre.dart';
-import '../../app/theme/app_theme.dart';
+import '../../../models/genre.dart';
+import '../../../app/theme/app_theme.dart';
 
 class ProblemScreen extends ConsumerWidget {
   final Genre genre;

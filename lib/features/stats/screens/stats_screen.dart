@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../view_models/stats_view_model.dart';
+import '../view_models/stats_view_model.dart' as stats;
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsState = ref.watch(statsViewModelProvider);
-    final statsViewModel = ref.read(statsViewModelProvider.notifier);
+    final statsState = ref.watch(stats.statsViewModelProvider);
+    final statsViewModel = ref.read(stats.statsViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +60,7 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsContent(BuildContext context, StatsState state, StatsViewModel viewModel) {
+  Widget _buildStatsContent(BuildContext context, stats.StatsState state, stats.StatsViewModel viewModel) {
     if (state.allSummaries.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -117,7 +117,7 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGenreFilter(BuildContext context, StatsState state, StatsViewModel viewModel) {
+  Widget _buildGenreFilter(BuildContext context, stats.StatsState state, stats.StatsViewModel viewModel) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -168,7 +168,7 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOverallStatsCard(BuildContext context, StatsState state) {
+  Widget _buildOverallStatsCard(BuildContext context, stats.StatsState state) {
     final overallStats = state.filteredSummaries.isNotEmpty
         ? _calculateOverallStats(state.filteredSummaries)
         : null;
@@ -234,7 +234,7 @@ class StatsScreen extends ConsumerWidget {
                   context,
                   'Accuracy',
                   '${overallStats['overallAccuracy'].toStringAsFixed(1)}%',
-                  Icons.target,
+                  Icons.track_changes,
                 ),
               ),
               Expanded(
@@ -290,10 +290,10 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPerformanceChart(BuildContext context, StatsState state) {
+  Widget _buildPerformanceChart(BuildContext context, stats.StatsState state) {
     final performanceData = state.filteredSummaries.isNotEmpty
         ? _preparePerformanceData(state.filteredSummaries)
-        : <ChartData>[];
+        : <stats.ChartData>[];
 
     if (performanceData.isEmpty) {
       return const SizedBox.shrink();
@@ -381,10 +381,10 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAttemptVolumeChart(BuildContext context, StatsState state) {
+  Widget _buildAttemptVolumeChart(BuildContext context, stats.StatsState state) {
     final volumeData = state.filteredSummaries.isNotEmpty
         ? _prepareVolumeData(state.filteredSummaries)
-        : <BarChartData>[];
+        : <stats.BarChartData>[];
 
     if (volumeData.isEmpty) {
       return const SizedBox.shrink();
@@ -478,12 +478,12 @@ class StatsScreen extends ConsumerWidget {
 
   Map<String, dynamic> _calculateOverallStats(List<dynamic> summaries) {
     final totalSessions = summaries.length;
-    final totalQuestions = summaries.fold(0, (sum, s) => sum + s.totalQuestions);
-    final totalCorrectAnswers = summaries.fold(0, (sum, s) => sum + s.correctAnswers);
+    final totalQuestions = summaries.fold<int>(0, (sum, s) => sum + (s.totalQuestions as int));
+    final totalCorrectAnswers = summaries.fold<int>(0, (sum, s) => sum + (s.correctAnswers as int));
     final overallAccuracy = totalQuestions > 0 ? (totalCorrectAnswers / totalQuestions) * 100 : 0.0;
     
-    final totalTimeMs = summaries.fold(0, (sum, s) => 
-        sum + (s.averageTimePerQuestion.inMilliseconds * s.totalQuestions));
+    final totalTimeMs = summaries.fold<int>(0, (sum, s) => 
+        sum + ((s.averageTimePerQuestion.inMilliseconds * s.totalQuestions) as int));
     final averageTimePerQuestion = totalQuestions > 0 
         ? Duration(milliseconds: totalTimeMs ~/ totalQuestions)
         : Duration.zero;
@@ -497,14 +497,14 @@ class StatsScreen extends ConsumerWidget {
     };
   }
 
-  List<ChartData> _preparePerformanceData(List<dynamic> summaries) {
+  List<stats.ChartData> _preparePerformanceData(List<dynamic> summaries) {
     final sortedSummaries = List.from(summaries)
       ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
     
     return sortedSummaries.asMap().entries.map((entry) {
       final index = entry.key;
       final summary = entry.value;
-      return ChartData(
+      return stats.ChartData(
         x: index.toDouble(),
         y: summary.accuracyPercentage,
         label: '${summary.completedAt.day}/${summary.completedAt.month}',
@@ -512,7 +512,7 @@ class StatsScreen extends ConsumerWidget {
     }).toList();
   }
 
-  List<BarChartData> _prepareVolumeData(List<dynamic> summaries) {
+  List<stats.BarChartData> _prepareVolumeData(List<dynamic> summaries) {
     final Map<String, int> dailyCounts = {};
     for (final summary in summaries) {
       final dateKey = '${summary.completedAt.year}-${summary.completedAt.month.toString().padLeft(2, '0')}-${summary.completedAt.day.toString().padLeft(2, '0')}';
@@ -528,7 +528,7 @@ class StatsScreen extends ConsumerWidget {
       final dateParts = date.split('-');
       final displayDate = '${dateParts[2]}/${dateParts[1]}';
       
-      return BarChartData(
+      return stats.BarChartData(
         x: index.toDouble(),
         y: count.toDouble(),
         label: displayDate,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/genre.dart';
-import '../../features/problem/screens/problem_screen.dart';
-import '../../features/stats/screens/stats_screen.dart';
-import '../../app/theme/app_theme.dart';
+import '../../../models/genre.dart';
+import '../../problem/screens/problem_screen.dart';
+import '../../stats/screens/stats_screen.dart';
+import '../../../app/theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

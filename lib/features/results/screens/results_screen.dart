@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/session_result.dart';
-import '../../features/home/screens/home_screen.dart';
+import 'package:intl/intl.dart';
+import '../../../models/session_result.dart';
+import '../../../models/session_summary.dart';
+import '../../../models/genre.dart';
+import '../../home/screens/home_screen.dart';
 
 class ResultsScreen extends StatelessWidget {
   final List<SessionResult> sessionResults;
@@ -101,7 +104,7 @@ class ResultsScreen extends StatelessWidget {
                   context,
                   'Accuracy',
                   '${summary.accuracyPercentage.toStringAsFixed(1)}%',
-                  Icons.target,
+                  Icons.track_changes,
                 ),
               ),
               Expanded(
