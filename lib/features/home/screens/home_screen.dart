@@ -38,13 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.spacingL),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spacingL),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // Title and subtitle
-              const SizedBox(height: AppTheme.spacingL),
+              const SizedBox(height: AppTheme.spacingM),
               Text(
                 'Mental Math Trainer',
                 style: Theme.of(context).textTheme.headlineMedium,
@@ -58,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppTheme.spacingXXL),
+              const SizedBox(height: AppTheme.spacingM),
 
               // Genre Selection
               Text(
@@ -67,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: AppTheme.spacingM),
               SizedBox(
-                height: 50,
+                height: 40,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: Genre.values.length,
@@ -111,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingXXL),
+              const SizedBox(height: AppTheme.spacingL),
 
               // Precision Selection
               Text(
@@ -157,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingXXL),
+              const SizedBox(height: AppTheme.spacingL),
 
               // Time Selection
               Text(
@@ -208,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingXXL + AppTheme.spacingM),
+              const SizedBox(height: AppTheme.spacingL),
 
               // Start Button
               ElevatedButton(
@@ -269,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -186,7 +186,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   Widget _buildQuestionSection(BuildContext context, ProblemSessionState state) {
     return Expanded(
-      flex: 2,
+      flex: 1,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppTheme.spacingL),
@@ -205,7 +205,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
                 color: AppTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingS),
             AnimatedOpacity(
               opacity: state.currentProblem != null ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
@@ -217,7 +217,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingS),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM, vertical: AppTheme.spacingS),
               decoration: BoxDecoration(
@@ -244,7 +244,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
       flex: 1,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+        margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingS),
         padding: const EdgeInsets.all(AppTheme.spacingL),
         decoration: BoxDecoration(
           color: AppTheme.backgroundLight,
@@ -289,7 +289,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
     final viewModel = ref.read(problemViewModelProvider(providerKey).notifier);
     
     return Expanded(
-      flex: 3,
+      flex: 2,
       child: CustomKeypad(
         onKeyPressed: viewModel.onKeyPressed,
         onEnterPressed: viewModel.submitAnswer,
