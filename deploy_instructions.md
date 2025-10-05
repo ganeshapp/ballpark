@@ -1,4 +1,4 @@
-# Local Build and Deploy Instructions
+time # Local Build and Deploy Instructions
 
 Since GitHub Actions is not available due to billing issues, here's how to build and deploy your Flutter web app locally:
 

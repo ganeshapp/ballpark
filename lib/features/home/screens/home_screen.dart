@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Genre? _selectedGenre;
   double _selectedPrecision = 10.0; // Default to 10%
-  int _selectedTimeMinutes = 5; // Default to 5 minutes
+  int _selectedTimeSeconds = 300; // Default to 5 minutes (300 seconds)
 
   @override
   Widget build(BuildContext context) {
@@ -168,20 +168,25 @@ class _HomeScreenState extends State<HomeScreen> {
               SegmentedButton<int>(
                 segments: const [
                   ButtonSegment<int>(
-                    value: 3,
+                    value: 30,
+                    label: Text('0:30'),
+                    icon: Icon(Icons.timer),
+                  ),
+                  ButtonSegment<int>(
+                    value: 180,
                     label: Text('3:00'),
                     icon: Icon(Icons.timer),
                   ),
                   ButtonSegment<int>(
-                    value: 5,
+                    value: 300,
                     label: Text('5:00'),
                     icon: Icon(Icons.timer),
                   ),
                 ],
-                selected: {_selectedTimeMinutes},
+                selected: {_selectedTimeSeconds},
                 onSelectionChanged: (Set<int> selection) {
                   setState(() {
-                    _selectedTimeMinutes = selection.first;
+                    _selectedTimeSeconds = selection.first;
                   });
                 },
                 style: ButtonStyle(
@@ -254,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       Text(
-                        'Time: ${_selectedTimeMinutes}:00',
+                        'Time: ${_formatTime(_selectedTimeSeconds)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -275,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
     print('Starting session with:');
     print('Genre: ${_selectedGenre!.displayName}');
     print('Precision: ${_selectedPrecision.toInt()}%');
-    print('Time: ${_selectedTimeMinutes}:00');
+    print('Time: ${_formatTime(_selectedTimeSeconds)}');
 
     // Navigate to ProblemScreen
     Navigator.push(
@@ -284,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => ProblemScreen(
           genre: _selectedGenre!,
           precision: _selectedPrecision,
-          timeLimit: Duration(minutes: _selectedTimeMinutes),
+          timeLimit: Duration(seconds: _selectedTimeSeconds),
         ),
       ),
     );
@@ -293,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Starting ${_selectedGenre!.displayName} session (${_selectedPrecision.toInt()}% precision, ${_selectedTimeMinutes}:00)',
+          'Starting ${_selectedGenre!.displayName} session (${_selectedPrecision.toInt()}% precision, ${_formatTime(_selectedTimeSeconds)})',
         ),
         backgroundColor: Theme.of(context).primaryColor,
         behavior: SnackBarBehavior.floating,
@@ -302,5 +307,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (minutes > 0) {
+      return '${minutes}:${remainingSeconds.toString().padLeft(2, '0')}';
+    } else {
+      return '0:${remainingSeconds.toString().padLeft(2, '0')}';
+    }
   }
 }

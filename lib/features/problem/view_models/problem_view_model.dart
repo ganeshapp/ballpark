@@ -244,9 +244,34 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   double _parseInputValue(String input) {
-    // Remove suffixes and parse
-    String cleanInput = input.replaceAll(RegExp(r'[KMB%]'), '');
-    return double.parse(cleanInput);
+    if (input.isEmpty) return 0.0;
+    
+    // Handle suffixes properly
+    String cleanInput = input.toUpperCase();
+    double multiplier = 1.0;
+    
+    if (cleanInput.endsWith('B')) {
+      multiplier = 1000000000.0; // Billion
+      cleanInput = cleanInput.substring(0, cleanInput.length - 1);
+    } else if (cleanInput.endsWith('M')) {
+      multiplier = 1000000.0; // Million
+      cleanInput = cleanInput.substring(0, cleanInput.length - 1);
+    } else if (cleanInput.endsWith('K')) {
+      multiplier = 1000.0; // Thousand
+      cleanInput = cleanInput.substring(0, cleanInput.length - 1);
+    } else if (cleanInput.endsWith('%')) {
+      // For percentages, we'll handle this differently
+      cleanInput = cleanInput.substring(0, cleanInput.length - 1);
+      // Don't apply multiplier for percentages - they should be handled as-is
+    }
+    
+    try {
+      double baseValue = double.parse(cleanInput);
+      return baseValue * multiplier;
+    } catch (e) {
+      print('Error parsing input "$input": $e');
+      return 0.0;
+    }
   }
 
   String _formatNumber(double number) {
@@ -268,9 +293,19 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
       final userAnswer = _parseInputValue(state.userInput);
       final correctAnswer = state.currentProblem!.actualAnswer;
       
+      print('Submitting answer:');
+      print('  User input: "${state.userInput}"');
+      print('  Parsed user answer: $userAnswer');
+      print('  Correct answer: $correctAnswer');
+      print('  Precision: $_precision%');
+      
       // Calculate tolerance based on precision
       final tolerance = (correctAnswer * _precision) / 100;
       final isCorrect = (userAnswer - correctAnswer).abs() <= tolerance;
+      
+      print('  Tolerance: $tolerance');
+      print('  Difference: ${(userAnswer - correctAnswer).abs()}');
+      print('  Is correct: $isCorrect');
       
       // Create session result for this problem
       final sessionResult = SessionResult(
@@ -407,9 +442,9 @@ final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, 
   final parts = params.split('|');
   final genre = Genre.values.firstWhere((g) => g.name == parts[0]);
   final precision = double.parse(parts[1]);
-  final timeLimit = Duration(minutes: int.parse(parts[2]));
+  final timeLimit = Duration(seconds: int.parse(parts[2]));
   
-  print('Creating ProblemViewModel with genre: ${genre.displayName}, precision: $precision, timeLimit: ${timeLimit.inMinutes}min');
+  print('Creating ProblemViewModel with genre: ${genre.displayName}, precision: $precision, timeLimit: ${timeLimit.inSeconds}s');
   
   return ProblemViewModel(
     problemGenerator: problemGenerator,

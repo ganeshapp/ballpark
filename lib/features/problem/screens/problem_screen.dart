@@ -42,7 +42,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inSeconds}';
     final viewModel = ref.watch(problemViewModelProvider(providerKey));
     
     return RawKeyboardListener(
@@ -186,7 +186,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   Widget _buildQuestionSection(BuildContext context, ProblemSessionState state) {
     return Expanded(
-      flex: 3,
+      flex: 2,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppTheme.spacingL),
@@ -241,7 +241,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   Widget _buildAnswerSection(BuildContext context, ProblemSessionState state) {
     return Expanded(
-      flex: 2,
+      flex: 1,
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
@@ -285,11 +285,11 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
   }
 
   Widget _buildKeypadSection(BuildContext context, WidgetRef ref, ProblemSessionState state) {
-    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inSeconds}';
     final viewModel = ref.read(problemViewModelProvider(providerKey).notifier);
     
     return Expanded(
-      flex: 2,
+      flex: 3,
       child: CustomKeypad(
         onKeyPressed: viewModel.onKeyPressed,
         onEnterPressed: viewModel.submitAnswer,
@@ -299,7 +299,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
   }
 
   void _handleKeyPress(RawKeyDownEvent event, WidgetRef ref, BuildContext context) {
-    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inSeconds}';
     final viewModel = ref.read(problemViewModelProvider(providerKey).notifier);
 
     // Get the logical key
