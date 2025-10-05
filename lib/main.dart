@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/theme/app_theme.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/problem/view_models/problem_view_model.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -17,6 +18,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
     );
   }
 }

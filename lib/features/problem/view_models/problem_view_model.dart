@@ -9,6 +9,9 @@ import '../../../services/problem_generator_service.dart';
 import '../../../services/local_storage_service.dart';
 import '../../results/screens/results_screen.dart' as results;
 
+// Global navigator key for navigation without context
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class ProblemSessionState {
   final Problem? currentProblem;
   final String userInput;
@@ -63,7 +66,6 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   final Genre _genre;
   final double _precision;
   final Duration _timeLimit;
-  BuildContext? _context;
   Timer? _timer;
   bool _isGeneratingProblem = false;
   DateTime _sessionStartTime = DateTime.now();
@@ -83,9 +85,6 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     _startSession();
   }
 
-  void setContext(BuildContext context) {
-    _context = context;
-  }
 
   void _startSession() {
     print('Starting session with genre: ${_genre.displayName}');
@@ -368,9 +367,10 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
   
   void _navigateToResults() {
-    if (_context != null) {
+    final context = navigatorKey.currentContext;
+    if (context != null) {
       Navigator.pushReplacement(
-        _context!,
+        context,
         MaterialPageRoute(
           builder: (context) => results.ResultsScreen(
             sessionResults: state.sessionResults,
@@ -399,14 +399,17 @@ final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
 });
 
 // Provider for the ProblemViewModel
-final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, ProblemSessionState, Map<String, dynamic>>((ref, params) {
+final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, ProblemSessionState, String>((ref, params) {
   final problemGenerator = ref.watch(problemGeneratorServiceProvider);
   final localStorage = ref.watch(localStorageServiceProvider);
-  final genre = params['genre'] as Genre;
-  final precision = params['precision'] as double;
-  final timeLimit = params['timeLimit'] as Duration;
   
-  print('Creating ProblemViewModel with genre: ${genre.displayName}');
+  // Parse the parameters from the string key
+  final parts = params.split('|');
+  final genre = Genre.values.firstWhere((g) => g.name == parts[0]);
+  final precision = double.parse(parts[1]);
+  final timeLimit = Duration(minutes: int.parse(parts[2]));
+  
+  print('Creating ProblemViewModel with genre: ${genre.displayName}, precision: $precision, timeLimit: ${timeLimit.inMinutes}min');
   
   return ProblemViewModel(
     problemGenerator: problemGenerator,

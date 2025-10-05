@@ -42,20 +42,8 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(problemViewModelProvider({
-      'genre': widget.genre,
-      'precision': widget.precision,
-      'timeLimit': widget.timeLimit,
-    }));
-    
-    // Set context after view model is created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(problemViewModelProvider({
-        'genre': widget.genre,
-        'precision': widget.precision,
-        'timeLimit': widget.timeLimit,
-      }).notifier).setContext(context);
-    });
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final viewModel = ref.watch(problemViewModelProvider(providerKey));
     
     return RawKeyboardListener(
       focusNode: _focusNode,
@@ -297,11 +285,8 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
   }
 
   Widget _buildKeypadSection(BuildContext context, WidgetRef ref, ProblemSessionState state) {
-    final viewModel = ref.read(problemViewModelProvider({
-      'genre': widget.genre,
-      'precision': widget.precision,
-      'timeLimit': widget.timeLimit,
-    }).notifier);
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final viewModel = ref.read(problemViewModelProvider(providerKey).notifier);
     
     return Expanded(
       flex: 2,
@@ -314,11 +299,8 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
   }
 
   void _handleKeyPress(RawKeyDownEvent event, WidgetRef ref, BuildContext context) {
-    final viewModel = ref.read(problemViewModelProvider({
-      'genre': widget.genre,
-      'precision': widget.precision,
-      'timeLimit': widget.timeLimit,
-    }).notifier);
+    final providerKey = '${widget.genre.name}|${widget.precision}|${widget.timeLimit.inMinutes}';
+    final viewModel = ref.read(problemViewModelProvider(providerKey).notifier);
 
     // Get the logical key
     final logicalKey = event.logicalKey;
