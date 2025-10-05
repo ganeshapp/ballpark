@@ -63,7 +63,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   final Genre _genre;
   final double _precision;
   final Duration _timeLimit;
-  final BuildContext _context;
+  BuildContext? _context;
   Timer? _timer;
   bool _isGeneratingProblem = false;
   DateTime _sessionStartTime = DateTime.now();
@@ -74,15 +74,17 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     required Genre genre,
     required double precision,
     required Duration timeLimit,
-    required BuildContext context,
   })  : _problemGenerator = problemGenerator,
         _localStorage = localStorage,
         _genre = genre,
         _precision = precision,
         _timeLimit = timeLimit,
-        _context = context,
         super(ProblemSessionState(timeRemaining: timeLimit)) {
     _startSession();
+  }
+
+  void setContext(BuildContext context) {
+    _context = context;
   }
 
   void _startSession() {
@@ -134,8 +136,12 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   void updateUserInput(String input) {
-    if (!state.isSessionActive) return;
+    if (!state.isSessionActive) {
+      print('Cannot update input - session not active');
+      return;
+    }
     
+    print('Updating user input from "${state.userInput}" to "$input"');
     state = state.copyWith(userInput: input);
   }
 
@@ -145,7 +151,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
       return;
     }
 
-    print('Key pressed: $key, current input: ${state.userInput}');
+    print('Key pressed: $key, current input: "${state.userInput}"');
     String newInput = state.userInput;
 
     switch (key) {
@@ -362,15 +368,16 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
   
   void _navigateToResults() {
-    // Import the ResultsScreen
-    Navigator.pushReplacement(
-      _context,
-      MaterialPageRoute(
-        builder: (context) => results.ResultsScreen(
-          sessionResults: state.sessionResults,
+    if (_context != null) {
+      Navigator.pushReplacement(
+        _context!,
+        MaterialPageRoute(
+          builder: (context) => results.ResultsScreen(
+            sessionResults: state.sessionResults,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -398,7 +405,6 @@ final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, 
   final genre = params['genre'] as Genre;
   final precision = params['precision'] as double;
   final timeLimit = params['timeLimit'] as Duration;
-  final context = params['context'] as BuildContext;
   
   print('Creating ProblemViewModel with genre: ${genre.displayName}');
   
@@ -408,6 +414,5 @@ final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, 
     genre: genre,
     precision: precision,
     timeLimit: timeLimit,
-    context: context,
   );
 });

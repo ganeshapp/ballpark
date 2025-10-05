@@ -46,8 +46,16 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
       'genre': widget.genre,
       'precision': widget.precision,
       'timeLimit': widget.timeLimit,
-      'context': context,
     }));
+    
+    // Set context after view model is created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(problemViewModelProvider({
+        'genre': widget.genre,
+        'precision': widget.precision,
+        'timeLimit': widget.timeLimit,
+      }).notifier).setContext(context);
+    });
     
     return RawKeyboardListener(
       focusNode: _focusNode,
@@ -293,7 +301,6 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
       'genre': widget.genre,
       'precision': widget.precision,
       'timeLimit': widget.timeLimit,
-      'context': context,
     }).notifier);
     
     return Expanded(
@@ -311,7 +318,6 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
       'genre': widget.genre,
       'precision': widget.precision,
       'timeLimit': widget.timeLimit,
-      'context': context,
     }).notifier);
 
     // Get the logical key
