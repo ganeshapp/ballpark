@@ -69,7 +69,10 @@ class CustomKeypad extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXS),
         child: ElevatedButton(
-          onPressed: () => onKeyPressed(text),
+          onPressed: () {
+            print('Keypad button pressed: $text');
+            onKeyPressed(text);
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.backgroundLight,
             foregroundColor: AppTheme.textPrimary,
@@ -95,7 +98,10 @@ class CustomKeypad extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXS),
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: () {
+          print('Action button pressed: $text');
+          onPressed?.call();
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: text == 'ENTER' 
             ? AppTheme.successColor 

@@ -92,12 +92,20 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   void _startTimer() {
+    // Cancel any existing timer first
+    _timer?.cancel();
+    
+    print('Starting timer with ${state.timeRemaining.inSeconds} seconds remaining');
+    
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.timeRemaining.inSeconds > 0) {
+        final newTime = Duration(seconds: state.timeRemaining.inSeconds - 1);
+        print('Timer tick: ${newTime.inSeconds} seconds remaining');
         state = state.copyWith(
-          timeRemaining: Duration(seconds: state.timeRemaining.inSeconds - 1),
+          timeRemaining: newTime,
         );
       } else {
+        print('Timer ended - calling _endSession()');
         _endSession();
       }
     });
@@ -391,6 +399,8 @@ final problemViewModelProvider = StateNotifierProvider.family<ProblemViewModel, 
   final precision = params['precision'] as double;
   final timeLimit = params['timeLimit'] as Duration;
   final context = params['context'] as BuildContext;
+  
+  print('Creating ProblemViewModel with genre: ${genre.displayName}');
   
   return ProblemViewModel(
     problemGenerator: problemGenerator,

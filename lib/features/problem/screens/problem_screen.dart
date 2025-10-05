@@ -190,7 +190,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   Widget _buildQuestionSection(BuildContext context, ProblemSessionState state) {
     return Expanded(
-      flex: 2,
+      flex: 3,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppTheme.spacingL),
@@ -245,7 +245,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
 
   Widget _buildAnswerSection(BuildContext context, ProblemSessionState state) {
     return Expanded(
-      flex: 1,
+      flex: 2,
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
@@ -297,7 +297,7 @@ class _ProblemScreenState extends ConsumerState<ProblemScreen> {
     }).notifier);
     
     return Expanded(
-      flex: 3,
+      flex: 2,
       child: CustomKeypad(
         onKeyPressed: viewModel.onKeyPressed,
         onEnterPressed: viewModel.submitAnswer,
