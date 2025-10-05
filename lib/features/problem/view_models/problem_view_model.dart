@@ -65,6 +65,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   final Duration _timeLimit;
   final BuildContext _context;
   Timer? _timer;
+  bool _isGeneratingProblem = false;
   DateTime _sessionStartTime = DateTime.now();
 
   ProblemViewModel({
@@ -102,12 +103,20 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   void _generateNewProblem() {
+    // Prevent generating new problems if session is not active or already generating
+    if (!state.isSessionActive || _isGeneratingProblem) return;
+    
+    _isGeneratingProblem = true;
+    
     final problem = _problemGenerator.generateProblem(_genre);
     state = state.copyWith(
       currentProblem: problem,
       userInput: '',
       showFeedback: false,
+      isAnswerCorrect: false,
     );
+    
+    _isGeneratingProblem = false;
   }
 
   void updateUserInput(String input) {
@@ -270,7 +279,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
       
       // Hide feedback after delay and generate next problem
       Timer(const Duration(milliseconds: 1500), () {
-        if (state.isSessionActive) {
+        if (state.isSessionActive && !_isGeneratingProblem) {
           _generateNewProblem();
         }
       });
@@ -349,6 +358,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   @override
   void dispose() {
     _timer?.cancel();
+    _isGeneratingProblem = false;
     super.dispose();
   }
 }

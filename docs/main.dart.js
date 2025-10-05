@@ -6875,7 +6875,8 @@ _.y=d
 _.z=e
 _.Q=f
 _.as=null
-_.at=g
+_.at=!1
+_.ax=g
 _.a=h
 _.f=i},
 a4m:function a4m(a){this.a=a},
@@ -35305,7 +35306,7 @@ $3$isAnswerCorrect$sessionResults$showFeedback(a,b,c){return this.G(this,A.G("ca
 $2$problemsCompleted$score(a,b){return this.G(this,A.G("call","$2$problemsCompleted$score",0,[a,b],["problemsCompleted","score"],0))},
 $2$isAnswerCorrect$showFeedback(a,b){return this.G(this,A.G("call","$2$isAnswerCorrect$showFeedback",0,[a,b],["isAnswerCorrect","showFeedback"],0))},
 $1$showFeedback(a){return this.G(this,A.G("call","$1$showFeedback",0,[a],["showFeedback"],0))},
-$3$currentProblem$showFeedback$userInput(a,b,c){return this.G(this,A.G("call","$3$currentProblem$showFeedback$userInput",0,[a,b,c],["currentProblem","showFeedback","userInput"],0))},
+$4$currentProblem$isAnswerCorrect$showFeedback$userInput(a,b,c,d){return this.G(this,A.G("call","$4$currentProblem$isAnswerCorrect$showFeedback$userInput",0,[a,b,c,d],["currentProblem","isAnswerCorrect","showFeedback","userInput"],0))},
 $2$terse(a,b){return this.G(this,A.G("call","$2$terse",0,[a,b],["terse"],0))},
 $1$scheme(a){return this.G(this,A.G("call","$1$scheme",0,[a],["scheme"],0))},
 $2$withDrive(a,b){return this.G(this,A.G("call","$2$withDrive",0,[a,b],["withDrive"],0))},
@@ -36651,7 +36652,7 @@ ku(a,b,c,d,e,f,g,h,i){var s=this,r=a==null?s.a:a,q=i==null?s.b:i,p=e==null?s.c:e
 return new A.j0(r,q,p,o,n,m,l,k,f==null?s.x:f)},
 a7C(a){var s=null
 return this.ku(s,s,s,s,s,s,s,s,a)},
-a7Y(a,b,c){var s=null
+a7X(a,b,c){var s=null
 return this.ku(s,a,s,s,s,b,c,s,s)},
 a7T(a,b){var s=null
 return this.ku(s,s,s,a,b,s,s,s,s)},
@@ -36659,16 +36660,20 @@ a7K(a,b){var s=null
 return this.ku(s,a,s,s,s,s,b,s,s)},
 a7w(a){var s=null
 return this.ku(s,s,s,s,s,s,a,s,s)},
-a7X(a,b,c){var s=null
-return this.ku(a,s,s,s,s,s,b,s,c)},
+a7Z(a,b,c,d){var s=null
+return this.ku(a,b,s,s,s,s,c,s,d)},
 a7B(a){var s=null
 return this.ku(s,s,s,s,s,s,s,a,s)},
 a7s(a){var s=null
 return this.ku(s,s,a,s,s,s,s,s,s)}}
 A.j1.prototype={
 a50(){this.as=A.aE3(B.dF,new A.a4m(this))},
-I4(){var s=this,r=s.r.R3(s.x)
-s.shi(s.f.a7X(r,!1,""))},
+I4(){var s,r=this
+if(!r.f.w||r.at)return
+r.at=!0
+s=r.r.R3(r.x)
+r.shi(r.f.a7Z(s,!1,!1,""))
+r.at=!1},
 rI(a){var s=this.f
 if(!s.w)return
 this.shi(s.a7C(a))},
@@ -36727,7 +36732,7 @@ o=new A.j7(k,s,A.cn(0,0,0,15),p)
 j=A.iQ(f.x,!0,t.Ns)
 j.push(o)
 n=j
-g.shi(g.f.a7Y(p,n,!0))
+g.shi(g.f.a7X(p,n,!0))
 f=g.f
 i=f.c
 m=p?i+1:i
@@ -36775,6 +36780,7 @@ q.pq()
 q.pd()},
 l(){var s=this.as
 if(s!=null)s.b0()
+this.at=!1
 this.UF()}}
 A.a4m.prototype={
 $1(a){var s=this.a,r=s.f,q=B.h.bY(r.e.a,1e6)
@@ -36783,7 +36789,7 @@ else s.tv()},
 $S:192}
 A.a4n.prototype={
 $0(){var s=this.a
-if(s.f.w)s.I4()},
+if(s.f.w&&!s.at)s.I4()},
 $S:0}
 A.a4o.prototype={
 $0(){var s=this.a,r=s.f
@@ -47002,7 +47008,7 @@ Ni(a,b,c,d,e,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4,b5,b6,b7,b8,b9,c0,c1,c
 return A.aqn(f,g,s.q,l,s.RG,s.rx,s.R8,s.aR,!0,h,s.ch,s.xr,s.cy,s.cx,q,j,k,o,p,s.f,s.x1,i,s.y2,s.r,s.y,s.x,s.w,s.ax,s.at,s.Q,r,s.as,s.x2,s.a,s.b,n,m,s.c,s.e,s.d,!0,s.id,s.fy,s.k3,s.go,s.k2,s.k1,s.b2,s.ok,s.k4,s.p3,s.p4,s.p2,s.p1)},
 a7H(a,b){var s=null
 return this.Ni(s,s,s,s,s,s,s,s,s,s,a,s,s,s,s,s,s,s,s,s,s,s,s,b,s,s,s,s,s,s,s,s,s,s,s)},
-a7Z(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3){return this.Ni(a,b,c,d,e,f,g,h,i,j,null,k,l,m,n,o,p,q,r,s,a0,a1,a2,null,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3)},
+a7Y(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3){return this.Ni(a,b,c,d,e,f,g,h,i,j,null,k,l,m,n,o,p,q,r,s,a0,a1,a2,null,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3)},
 Mi(a){var s,r,q,p,o,n,m,l=this,k=null,j=l.db
 if(j==null)j=B.lY
 s=l.dx
@@ -47019,7 +47025,7 @@ n=l.bi
 if(n==null)n=a.k4
 m=l.a4
 if(m==null)m=a.ok
-return l.a7Z(l.aU===!0,m,k,r,k,k,n,k,k,k,p,q,s,j,k,k,o,k,k,k,k,k,k,k,l.fx===!0,l.dy===!0,k,k,k,k,k,k,k)},
+return l.a7Y(l.aU===!0,m,k,r,k,k,n,k,k,k,p,q,s,j,k,k,o,k,k,k,k,k,k,k,l.fx===!0,l.dy===!0,k,k,k,k,k,k,k)},
 j(a,b){var s,r=this
 if(b==null)return!1
 if(r===b)return!0
