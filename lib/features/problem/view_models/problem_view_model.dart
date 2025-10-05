@@ -86,6 +86,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   void _startSession() {
+    print('Starting session with genre: ${_genre.displayName}');
     _generateNewProblem();
     _startTimer();
   }
@@ -104,8 +105,12 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
 
   void _generateNewProblem() {
     // Prevent generating new problems if session is not active or already generating
-    if (!state.isSessionActive || _isGeneratingProblem) return;
+    if (!state.isSessionActive || _isGeneratingProblem) {
+      print('Skipping problem generation - session active: ${state.isSessionActive}, generating: $_isGeneratingProblem');
+      return;
+    }
     
+    print('Generating new problem...');
     _isGeneratingProblem = true;
     
     final problem = _problemGenerator.generateProblem(_genre);
@@ -117,6 +122,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     );
     
     _isGeneratingProblem = false;
+    print('Problem generated: ${problem.questionText}');
   }
 
   void updateUserInput(String input) {
@@ -126,8 +132,12 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   }
 
   void onKeyPressed(String key) {
-    if (!state.isSessionActive) return;
+    if (!state.isSessionActive) {
+      print('Key pressed but session not active: $key');
+      return;
+    }
 
+    print('Key pressed: $key, current input: ${state.userInput}');
     String newInput = state.userInput;
 
     switch (key) {

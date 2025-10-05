@@ -6,7 +6,7 @@ import '../view_models/problem_view_model.dart';
 import '../../../models/genre.dart';
 import '../../../app/theme/app_theme.dart';
 
-class ProblemScreen extends ConsumerWidget {
+class ProblemScreen extends ConsumerStatefulWidget {
   final Genre genre;
   final double precision;
   final Duration timeLimit;
@@ -19,16 +19,38 @@ class ProblemScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProblemScreen> createState() => _ProblemScreenState();
+}
+
+class _ProblemScreenState extends ConsumerState<ProblemScreen> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final viewModel = ref.watch(problemViewModelProvider({
-      'genre': genre,
-      'precision': precision,
-      'timeLimit': timeLimit,
+      'genre': widget.genre,
+      'precision': widget.precision,
+      'timeLimit': widget.timeLimit,
       'context': context,
     }));
     
     return RawKeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
+      focusNode: _focusNode,
       onKey: (RawKeyEvent event) {
         if (event is RawKeyDownEvent) {
           _handleKeyPress(event, ref, context);
@@ -39,7 +61,7 @@ class ProblemScreen extends ConsumerWidget {
           ? (viewModel.isAnswerCorrect ? Colors.green[50] : Colors.red[50])
           : null,
         appBar: AppBar(
-          title: Text(genre.displayName),
+          title: Text(widget.genre.displayName),
           centerTitle: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -208,7 +230,7 @@ class ProblemScreen extends ConsumerWidget {
                 border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
               ),
               child: Text(
-                'Precision: ±${precision.toInt()}%',
+                'Precision: ±${widget.precision.toInt()}%',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.primaryColor,
                   fontWeight: FontWeight.w500,
@@ -268,9 +290,9 @@ class ProblemScreen extends ConsumerWidget {
 
   Widget _buildKeypadSection(BuildContext context, WidgetRef ref, ProblemSessionState state) {
     final viewModel = ref.read(problemViewModelProvider({
-      'genre': genre,
-      'precision': precision,
-      'timeLimit': timeLimit,
+      'genre': widget.genre,
+      'precision': widget.precision,
+      'timeLimit': widget.timeLimit,
       'context': context,
     }).notifier);
     
@@ -286,9 +308,9 @@ class ProblemScreen extends ConsumerWidget {
 
   void _handleKeyPress(RawKeyDownEvent event, WidgetRef ref, BuildContext context) {
     final viewModel = ref.read(problemViewModelProvider({
-      'genre': genre,
-      'precision': precision,
-      'timeLimit': timeLimit,
+      'genre': widget.genre,
+      'precision': widget.precision,
+      'timeLimit': widget.timeLimit,
       'context': context,
     }).notifier);
 
