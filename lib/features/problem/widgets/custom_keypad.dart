@@ -21,19 +21,19 @@ class CustomKeypad extends StatelessWidget {
         children: [
           // First row: 1, 2, 3, +/-
           _buildKeypadRow(['1', '2', '3', '+/-']),
-          const SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: AppTheme.spacingS),
           
           // Second row: 4, 5, 6, %
           _buildKeypadRow(['4', '5', '6', '%']),
-          const SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: AppTheme.spacingS),
           
           // Third row: 7, 8, 9, K
           _buildKeypadRow(['7', '8', '9', 'K']),
-          const SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: AppTheme.spacingS),
           
           // Fourth row: ., 0, M, B
           _buildKeypadRow(['.', '0', 'M', 'B']),
-          const SizedBox(height: AppTheme.spacingM),
+          const SizedBox(height: AppTheme.spacingS),
           
           // Fifth row: ENTER, ⌫
           _buildActionRow(),
@@ -70,7 +70,7 @@ class CustomKeypad extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXS),
         child: ElevatedButton(
           onPressed: () {
-            print('Keypad button pressed: $text');
+            print('KEYPAD DEBUG: Button pressed: $text');
             onKeyPressed(text);
           },
           style: ElevatedButton.styleFrom(
@@ -80,7 +80,7 @@ class CustomKeypad extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusM),
             ),
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingS),
           ),
           child: Text(
             text,
@@ -99,7 +99,7 @@ class CustomKeypad extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXS),
       child: ElevatedButton(
         onPressed: () {
-          print('Action button pressed: $text');
+          print('KEYPAD DEBUG: Action button pressed: $text');
           onPressed?.call();
         },
         style: ElevatedButton.styleFrom(

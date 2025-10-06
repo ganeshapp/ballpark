@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/session_result.dart';
-import '../../../models/session_summary.dart';
-import '../../../models/genre.dart';
 import '../../home/screens/home_screen.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -13,350 +11,368 @@ class ResultsScreen extends StatelessWidget {
     required this.sessionResults,
   });
 
+  double _calculateErrorPercentage(double userAnswer, double correctAnswer) {
+    if (correctAnswer == 0) return 0.0;
+    return ((userAnswer - correctAnswer) / correctAnswer) * 100;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final summary = _calculateSummary(sessionResults);
+    final totalQuestions = sessionResults.length;
+    final correctAnswers = sessionResults.where((r) => r.isCorrect).length;
+    final accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0.0;
+    final totalTime = sessionResults.fold<Duration>(
+      Duration.zero,
+      (sum, result) => sum + result.timeTaken,
+    );
+    final averageTime = totalQuestions > 0 
+        ? Duration(milliseconds: totalTime.inMilliseconds ~/ totalQuestions)
+        : Duration.zero;
     
+    // Calculate average precision error (absolute)
+    final totalError = sessionResults.fold<double>(
+        0.0, (sum, r) => sum + _calculateErrorPercentage(r.userAnswer, r.problem.actualAnswer).abs());
+    final averagePrecisionError = totalQuestions > 0 ? totalError / totalQuestions : 0.0;
+    
+    // Calculate bias (positive = overestimating, negative = underestimating)
+    final totalSignedError = sessionResults.fold<double>(
+        0.0, (sum, r) => sum + _calculateErrorPercentage(r.userAnswer, r.problem.actualAnswer));
+    final averageBias = totalQuestions > 0 ? totalSignedError / totalQuestions : 0.0;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Session Results'),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Summary Card
-            _buildSummaryCard(context, summary),
-            
-            // Questions List
-            Expanded(
-              child: _buildQuestionsList(context),
-            ),
-            
-            // Done Button
-            _buildDoneButton(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(BuildContext context, SessionSummary summary) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[600]!, Colors.blue[800]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Session Complete!',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          // Stats Grid
-          Row(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Total Questions',
-                  '${summary.totalQuestions}',
-                  Icons.quiz,
+              // Summary Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Session Complete!',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem(
+                          context,
+                          'Total Questions',
+                          totalQuestions.toString(),
+                          Icons.quiz,
+                          Colors.blue,
+                        ),
+                        _buildStatItem(
+                          context,
+                          'Correct Answers',
+                          correctAnswers.toString(),
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                        _buildStatItem(
+                          context,
+                          'Accuracy',
+                          '${accuracy.toStringAsFixed(1)}%',
+                          Icons.track_changes,
+                          Colors.orange,
+                        ),
+                        _buildStatItem(
+                          context,
+                          'Avg Time',
+                          '${averageTime.inSeconds}s',
+                          Icons.timer,
+                          Colors.purple,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem(
+                          context,
+                          'Avg Precision',
+                          '±${averagePrecisionError.toStringAsFixed(1)}%',
+                          Icons.straighten,
+                          Colors.teal,
+                        ),
+                        _buildStatItem(
+                          context,
+                          'Estimation Bias',
+                          averageBias > 0 
+                              ? '+${averageBias.toStringAsFixed(1)}%' 
+                              : '${averageBias.toStringAsFixed(1)}%',
+                          averageBias > 0 ? Icons.trending_up : Icons.trending_down,
+                          averageBias > 0 ? Colors.red : Colors.blue,
+                        ),
+                      ],
+                    ),
+                    if (averageBias.abs() > 2)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          averageBias > 0 
+                              ? '📈 You tend to overestimate' 
+                              : '📉 You tend to underestimate',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Correct',
-                  '${summary.correctAnswers}',
-                  Icons.check_circle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Accuracy',
-                  '${summary.accuracyPercentage.toStringAsFixed(1)}%',
-                  Icons.track_changes,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Avg Time',
-                  '${summary.averageTimePerQuestion.inSeconds}s',
-                  Icons.timer,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+              const SizedBox(height: 24),
 
-  Widget _buildQuestionsList(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.list_alt,
-                  color: Colors.grey[700],
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Question Breakdown',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w600,
+              // Questions List
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.list, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Question Details',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: sessionResults.length,
+                          itemBuilder: (context, index) {
+                            final result = sessionResults[index];
+                            return _buildQuestionItem(context, result, index + 1);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Done Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Done',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          
-          // Questions List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: sessionResults.length,
-              itemBuilder: (context, index) {
-                final result = sessionResults[index];
-                return _buildQuestionItem(context, result, index + 1);
-              },
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildQuestionItem(BuildContext context, SessionResult result, int questionNumber) {
-    final isCorrect = result.isCorrect;
+    final errorPercentage = _calculateErrorPercentage(result.userAnswer, result.problem.actualAnswer);
+    final errorAbs = errorPercentage.abs();
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isCorrect ? Colors.green[50] : Colors.red[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCorrect ? Colors.green[200]! : Colors.red[200]!,
-          width: 1.5,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Question Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCorrect ? Colors.green[600] : Colors.red[600],
-                  borderRadius: BorderRadius.circular(8),
+                  color: result.isCorrect ? Colors.green.shade100 : Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   'Q$questionNumber',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
+                  style: TextStyle(
+                    color: result.isCorrect ? Colors.green.shade800 : Colors.red.shade800,
                     fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                isCorrect ? Icons.check_circle : Icons.cancel,
-                color: isCorrect ? Colors.green[600] : Colors.red[600],
-                size: 16,
-              ),
               const Spacer(),
-              Text(
-                '${result.timeInSeconds.toStringAsFixed(1)}s',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              Icon(
+                result.isCorrect ? Icons.check_circle : Icons.cancel,
+                color: result.isCorrect ? Colors.green : Colors.red,
+                size: 20,
               ),
             ],
           ),
-          
-          const SizedBox(height: 12),
-          
-          // Question Text
+          const SizedBox(height: 8),
           Text(
             result.problem.questionText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),
-          
-          const SizedBox(height: 12),
-          
-          // Answers Row
+          const SizedBox(height: 8),
           Row(
             children: [
-              // User Answer
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Text(
+                'Your answer: ',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                _formatNumber(result.userAnswer),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: result.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Correct: ',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                _formatNumber(result.problem.actualAnswer),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: errorPercentage > 0 ? Colors.red.shade50 : Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: errorPercentage > 0 ? Colors.red.shade200 : Colors.blue.shade200,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Your Answer:',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Icon(
+                      errorPercentage > 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                      size: 12,
+                      color: errorPercentage > 0 ? Colors.red.shade700 : Colors.blue.shade700,
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isCorrect ? Colors.green[100] : Colors.red[100],
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isCorrect ? Colors.green[300]! : Colors.red[300]!,
-                        ),
-                      ),
-                      child: Text(
-                        _formatAnswer(result.userAnswer),
-                        style: TextStyle(
-                          color: isCorrect ? Colors.green[800] : Colors.red[800],
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${errorPercentage > 0 ? '+' : ''}${errorPercentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: errorPercentage > 0 ? Colors.red.shade700 : Colors.blue.shade700,
                       ),
                     ),
                   ],
                 ),
               ),
-              
-              const SizedBox(width: 16),
-              
-              // Correct Answer
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Correct Answer:',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.blue[300]!),
-                      ),
-                      child: Text(
-                        _formatAnswer(result.problem.actualAnswer),
-                        style: TextStyle(
-                          color: Colors.blue[800],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 8),
+              Text(
+                errorPercentage > 0 ? 'overestimated' : 'underestimated',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[500],
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
@@ -366,84 +382,15 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDoneButton(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      child: ElevatedButton(
-        onPressed: () => _navigateToHome(context),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[600],
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 4,
-        ),
-        child: Text(
-          'Done',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToHome(BuildContext context) {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-      (route) => false,
-    );
-  }
-
-  String _formatAnswer(double answer) {
-    if (answer >= 1000000000) {
-      return '${(answer / 1000000000).toStringAsFixed(1)}B';
-    } else if (answer >= 1000000) {
-      return '${(answer / 1000000).toStringAsFixed(1)}M';
-    } else if (answer >= 1000) {
-      return '${(answer / 1000).toStringAsFixed(1)}K';
+  String _formatNumber(double number) {
+    if (number >= 1000000000) {
+      return '${(number / 1000000000).toStringAsFixed(1)}B';
+    } else if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
     } else {
-      return answer.toStringAsFixed(answer % 1 == 0 ? 0 : 1);
+      return number.toStringAsFixed(0);
     }
   }
-
-  SessionSummary _calculateSummary(List<SessionResult> results) {
-    final totalQuestions = results.length;
-    final correctAnswers = results.where((r) => r.isCorrect).length;
-    final accuracyPercentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0.0;
-    
-    final totalTime = results.fold<Duration>(
-      Duration.zero,
-      (sum, result) => sum + result.timeTaken,
-    );
-    final averageTimePerQuestion = totalQuestions > 0 
-      ? Duration(milliseconds: totalTime.inMilliseconds ~/ totalQuestions)
-      : Duration.zero;
-    
-    return SessionSummary(
-      totalQuestions: totalQuestions,
-      correctAnswers: correctAnswers,
-      accuracyPercentage: accuracyPercentage,
-      averageTimePerQuestion: averageTimePerQuestion,
-    );
-  }
-}
-
-class SessionSummary {
-  final int totalQuestions;
-  final int correctAnswers;
-  final double accuracyPercentage;
-  final Duration averageTimePerQuestion;
-
-  const SessionSummary({
-    required this.totalQuestions,
-    required this.correctAnswers,
-    required this.accuracyPercentage,
-    required this.averageTimePerQuestion,
-  });
 }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'app/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'features/home/screens/home_screen.dart';
-import 'features/problem/view_models/problem_view_model.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -14,11 +13,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BallPark',
-      theme: AppTheme.lightTheme,
+      title: 'Mental Math Trainer',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        textTheme: GoogleFonts.interTextTheme(),
+        useMaterial3: true,
+      ),
       home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
     );
   }
 }

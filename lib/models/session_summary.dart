@@ -1,30 +1,15 @@
 import 'dart:convert';
 
-/// Represents a summary of a completed mental math training session
 class SessionSummary {
-  /// Total number of questions attempted in the session
   final int totalQuestions;
-  
-  /// Number of correct answers
   final int correctAnswers;
-  
-  /// Accuracy percentage (0.0 to 100.0)
   final double accuracyPercentage;
-  
-  /// Average time taken per question
   final Duration averageTimePerQuestion;
-  
-  /// Timestamp when the session was completed
   final DateTime completedAt;
-  
-  /// The genre of problems practiced in this session
   final String genre;
-  
-  /// The precision setting used (5% or 10%)
-  final double precision;
-  
-  /// The time limit for the session
+  final double precision; // Tolerance threshold (5% or 10%)
   final Duration timeLimit;
+  final double averagePrecisionError; // Actual average precision error per question
 
   const SessionSummary({
     required this.totalQuestions,
@@ -35,68 +20,43 @@ class SessionSummary {
     required this.genre,
     required this.precision,
     required this.timeLimit,
+    required this.averagePrecisionError,
   });
 
-  /// Creates a SessionSummary from a JSON map
-  factory SessionSummary.fromJson(Map<String, dynamic> json) {
-    return SessionSummary(
-      totalQuestions: json['totalQuestions'] as int,
-      correctAnswers: json['correctAnswers'] as int,
-      accuracyPercentage: (json['accuracyPercentage'] as num).toDouble(),
-      averageTimePerQuestion: Duration(milliseconds: json['averageTimePerQuestionMs'] as int),
-      completedAt: DateTime.parse(json['completedAt'] as String),
-      genre: json['genre'] as String,
-      precision: (json['precision'] as num).toDouble(),
-      timeLimit: Duration(minutes: json['timeLimitMinutes'] as int),
-    );
-  }
-
-  /// Converts the SessionSummary to a JSON map
   Map<String, dynamic> toJson() {
     return {
       'totalQuestions': totalQuestions,
       'correctAnswers': correctAnswers,
       'accuracyPercentage': accuracyPercentage,
-      'averageTimePerQuestionMs': averageTimePerQuestion.inMilliseconds,
+      'averageTimePerQuestion': averageTimePerQuestion.inMilliseconds,
       'completedAt': completedAt.toIso8601String(),
       'genre': genre,
       'precision': precision,
-      'timeLimitMinutes': timeLimit.inMinutes,
+      'timeLimit': timeLimit.inSeconds,
+      'averagePrecisionError': averagePrecisionError,
     };
   }
 
-  /// Converts the SessionSummary to a JSON string
+  factory SessionSummary.fromJson(Map<String, dynamic> json) {
+    return SessionSummary(
+      totalQuestions: json['totalQuestions'] as int? ?? 0,
+      correctAnswers: json['correctAnswers'] as int? ?? 0,
+      accuracyPercentage: (json['accuracyPercentage'] as num?)?.toDouble() ?? 0.0,
+      averageTimePerQuestion: Duration(milliseconds: json['averageTimePerQuestion'] as int? ?? 0),
+      completedAt: DateTime.tryParse(json['completedAt'] as String? ?? '') ?? DateTime.now(),
+      genre: json['genre'] as String? ?? '',
+      precision: (json['precision'] as num?)?.toDouble() ?? 10.0,
+      timeLimit: Duration(seconds: json['timeLimit'] as int? ?? 300),
+      averagePrecisionError: (json['averagePrecisionError'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  /// Creates a SessionSummary from a JSON string
   factory SessionSummary.fromJsonString(String jsonString) {
-    final Map<String, dynamic> json = jsonDecode(jsonString);
-    return SessionSummary.fromJson(json);
-  }
-
-  /// Creates a copy of this SessionSummary with updated values
-  SessionSummary copyWith({
-    int? totalQuestions,
-    int? correctAnswers,
-    double? accuracyPercentage,
-    Duration? averageTimePerQuestion,
-    DateTime? completedAt,
-    String? genre,
-    double? precision,
-    Duration? timeLimit,
-  }) {
-    return SessionSummary(
-      totalQuestions: totalQuestions ?? this.totalQuestions,
-      correctAnswers: correctAnswers ?? this.correctAnswers,
-      accuracyPercentage: accuracyPercentage ?? this.accuracyPercentage,
-      averageTimePerQuestion: averageTimePerQuestion ?? this.averageTimePerQuestion,
-      completedAt: completedAt ?? this.completedAt,
-      genre: genre ?? this.genre,
-      precision: precision ?? this.precision,
-      timeLimit: timeLimit ?? this.timeLimit,
-    );
+    return SessionSummary.fromJson(jsonDecode(jsonString));
   }
 
   @override
@@ -107,7 +67,6 @@ class SessionSummary {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
     return other is SessionSummary &&
         other.totalQuestions == totalQuestions &&
         other.correctAnswers == correctAnswers &&
@@ -116,7 +75,8 @@ class SessionSummary {
         other.completedAt == completedAt &&
         other.genre == genre &&
         other.precision == precision &&
-        other.timeLimit == timeLimit;
+        other.timeLimit == timeLimit &&
+        other.averagePrecisionError == averagePrecisionError;
   }
 
   @override
@@ -128,6 +88,7 @@ class SessionSummary {
         completedAt.hashCode ^
         genre.hashCode ^
         precision.hashCode ^
-        timeLimit.hashCode;
+        timeLimit.hashCode ^
+        averagePrecisionError.hashCode;
   }
 }

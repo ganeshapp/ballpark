@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../models/genre.dart';
 import '../../problem/screens/problem_screen.dart';
 import '../../stats/screens/stats_screen.dart';
-import '../../../app/theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,15 +11,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Genre? _selectedGenre;
-  double _selectedPrecision = 10.0; // Default to 10%
-  int _selectedTimeSeconds = 300; // Default to 5 minutes (300 seconds)
+  Genre _selectedGenre = Genre.addition;
+  double _selectedPrecision = 10.0;
+  Duration _selectedTimeLimit = const Duration(minutes: 3);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BallPark'),
+        title: const Text('Mental Math Trainer'),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -38,37 +37,48 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingL),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-              // Title and subtitle
-              const SizedBox(height: AppTheme.spacingM),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 32),
+              
+              // Title
               Text(
                 'Mental Math Trainer',
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppTheme.spacingS),
-              Text(
-                'Train consulting-style mental math with timed problem sets',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textSecondary,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppTheme.spacingM),
-
+              
+              const SizedBox(height: 16),
+              
+              Text(
+                'Train consulting-style mental math with timed problem sets',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 48),
+              
               // Genre Selection
               Text(
-                'Select Problem Type',
-                style: Theme.of(context).textTheme.titleLarge,
+                'Select Problem Type:',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: AppTheme.spacingM),
+              
+              const SizedBox(height: 16),
+              
               SizedBox(
-                height: 40,
+                height: 50,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: Genre.values.length,
@@ -76,61 +86,49 @@ class _HomeScreenState extends State<HomeScreen> {
                     final genre = Genre.values[index];
                     final isSelected = _selectedGenre == genre;
                     
-                    return Padding(
-                      padding: const EdgeInsets.only(right: AppTheme.spacingM),
+                    return Container(
+                      margin: const EdgeInsets.only(right: 12),
                       child: ChoiceChip(
-                        label: Text(
-                          genre.displayName,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          ),
-                        ),
+                        label: Text(genre.displayName),
                         selected: isSelected,
                         onSelected: (selected) {
-                          setState(() {
-                            _selectedGenre = selected ? genre : null;
-                          });
+                          if (selected) {
+                            setState(() {
+                              _selectedGenre = genre;
+                            });
+                          }
                         },
-                        selectedColor: AppTheme.primaryColor,
-                        backgroundColor: AppTheme.backgroundLight,
-                        side: BorderSide(
-                          color: isSelected 
-                            ? AppTheme.primaryColor 
-                            : AppTheme.textTertiary,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacingM,
-                          vertical: AppTheme.spacingS,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                        ),
+                        selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingL),
-
+              
+              const SizedBox(height: 32),
+              
               // Precision Selection
               Text(
-                'Precision',
-                style: Theme.of(context).textTheme.titleLarge,
+                'Precision:',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: AppTheme.spacingM),
+              
+              const SizedBox(height: 16),
+              
               SegmentedButton<double>(
                 segments: const [
                   ButtonSegment<double>(
                     value: 5.0,
                     label: Text('5%'),
-                    icon: Icon(Icons.precision_manufacturing),
+                    icon: Icon(Icons.track_changes),
                   ),
                   ButtonSegment<double>(
                     value: 10.0,
                     label: Text('10%'),
-                    icon: Icon(Icons.precision_manufacturing),
+                    icon: Icon(Icons.track_changes),
                   ),
                 ],
                 selected: {_selectedPrecision},
@@ -139,185 +137,83 @@ class _HomeScreenState extends State<HomeScreen> {
                     _selectedPrecision = selection.first;
                   });
                 },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return Theme.of(context).primaryColor;
-                      }
-                      return Colors.grey[200]!;
-                    },
-                  ),
-                  foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return Colors.white;
-                      }
-                      return Colors.black87;
-                    },
-                  ),
-                ),
               ),
-              const SizedBox(height: AppTheme.spacingL),
-
+              
+              const SizedBox(height: 32),
+              
               // Time Selection
               Text(
-                'Time Limit',
-                style: Theme.of(context).textTheme.titleLarge,
+                'Time Limit:',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: AppTheme.spacingM),
-              SegmentedButton<int>(
+              
+              const SizedBox(height: 16),
+              
+              SegmentedButton<Duration>(
                 segments: const [
-                  ButtonSegment<int>(
-                    value: 30,
-                    label: Text('0:30'),
+                  ButtonSegment<Duration>(
+                    value: Duration(seconds: 30),
+                    label: Text('30s'),
                     icon: Icon(Icons.timer),
                   ),
-                  ButtonSegment<int>(
-                    value: 180,
+                  ButtonSegment<Duration>(
+                    value: Duration(minutes: 3),
                     label: Text('3:00'),
                     icon: Icon(Icons.timer),
                   ),
-                  ButtonSegment<int>(
-                    value: 300,
+                  ButtonSegment<Duration>(
+                    value: Duration(minutes: 5),
                     label: Text('5:00'),
                     icon: Icon(Icons.timer),
                   ),
                 ],
-                selected: {_selectedTimeSeconds},
-                onSelectionChanged: (Set<int> selection) {
+                selected: {_selectedTimeLimit},
+                onSelectionChanged: (Set<Duration> selection) {
                   setState(() {
-                    _selectedTimeSeconds = selection.first;
+                    _selectedTimeLimit = selection.first;
                   });
                 },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return Theme.of(context).primaryColor;
-                      }
-                      return Colors.grey[200]!;
-                    },
-                  ),
-                  foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                    (Set<WidgetState> states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return Colors.white;
-                      }
-                      return Colors.black87;
-                    },
-                  ),
-                ),
               ),
-              const SizedBox(height: AppTheme.spacingL),
-
+              
+              const Spacer(),
+              
               // Start Button
               ElevatedButton(
-                onPressed: _selectedGenre != null ? _startSession : null,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProblemScreen(
+                        genre: _selectedGenre,
+                        precision: _selectedPrecision,
+                        timeLimit: _selectedTimeLimit,
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedGenre != null ? AppTheme.primaryColor : AppTheme.textTertiary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingL),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 4,
                 ),
                 child: Text(
                   'START',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const SizedBox(height: AppTheme.spacingL),
-
-              // Session Summary
-              if (_selectedGenre != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundLight,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusM),
-                    border: Border.all(color: AppTheme.textTertiary),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Session Summary',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: AppTheme.spacingS),
-                      Text(
-                        'Type: ${_selectedGenre!.displayName}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        'Precision: ${_selectedPrecision.toInt()}%',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Text(
-                        'Time: ${_formatTime(_selectedTimeSeconds)}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              
+              const SizedBox(height: 32),
             ],
+            ),
           ),
         ),
       ),
-      ),
     );
-  }
-
-  void _startSession() {
-    if (_selectedGenre == null) return;
-
-    // For now, just print the selected options
-    print('Starting session with:');
-    print('Genre: ${_selectedGenre!.displayName}');
-    print('Precision: ${_selectedPrecision.toInt()}%');
-    print('Time: ${_formatTime(_selectedTimeSeconds)}');
-
-    // Navigate to ProblemScreen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProblemScreen(
-          genre: _selectedGenre!,
-          precision: _selectedPrecision,
-          timeLimit: Duration(seconds: _selectedTimeSeconds),
-        ),
-      ),
-    );
-
-    // Show a snackbar for now
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Starting ${_selectedGenre!.displayName} session (${_selectedPrecision.toInt()}% precision, ${_formatTime(_selectedTimeSeconds)})',
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    if (minutes > 0) {
-      return '${minutes}:${remainingSeconds.toString().padLeft(2, '0')}';
-    } else {
-      return '0:${remainingSeconds.toString().padLeft(2, '0')}';
-    }
   }
 }

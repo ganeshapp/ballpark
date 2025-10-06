@@ -85,9 +85,16 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     _startSession();
   }
 
+  void resetSession() {
+    print('Resetting session - starting fresh');
+    _timer?.cancel();
+    _isGeneratingProblem = false;
+    state = ProblemSessionState(timeRemaining: _timeLimit);
+    _startSession();
+  }
+
 
   void _startSession() {
-    print('Starting session with genre: ${_genre.displayName}');
     _generateNewProblem();
     _startTimer();
   }
@@ -96,17 +103,13 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     // Cancel any existing timer first
     _timer?.cancel();
     
-    print('Starting timer with ${state.timeRemaining.inSeconds} seconds remaining');
-    
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.timeRemaining.inSeconds > 0) {
         final newTime = Duration(seconds: state.timeRemaining.inSeconds - 1);
-        print('Timer tick: ${newTime.inSeconds} seconds remaining');
         state = state.copyWith(
           timeRemaining: newTime,
         );
       } else {
-        print('Timer ended - calling _endSession()');
         _endSession();
       }
     });
@@ -115,11 +118,9 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   void _generateNewProblem() {
     // Prevent generating new problems if session is not active or already generating
     if (!state.isSessionActive || _isGeneratingProblem) {
-      print('Skipping problem generation - session active: ${state.isSessionActive}, generating: $_isGeneratingProblem');
       return;
     }
     
-    print('Generating new problem...');
     _isGeneratingProblem = true;
     
     final problem = _problemGenerator.generateProblem(_genre);
@@ -131,26 +132,23 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     );
     
     _isGeneratingProblem = false;
-    print('Problem generated: ${problem.questionText}');
   }
 
   void updateUserInput(String input) {
     if (!state.isSessionActive) {
-      print('Cannot update input - session not active');
       return;
     }
     
-    print('Updating user input from "${state.userInput}" to "$input"');
+    print('INPUT DEBUG: Updating user input from "${state.userInput}" to "$input"');
     state = state.copyWith(userInput: input);
   }
 
   void onKeyPressed(String key) {
     if (!state.isSessionActive) {
-      print('Key pressed but session not active: $key');
       return;
     }
 
-    print('Key pressed: $key, current input: "${state.userInput}"');
+    print('KEYPAD DEBUG: Key pressed: $key, current input: "${state.userInput}"');
     String newInput = state.userInput;
 
     switch (key) {
