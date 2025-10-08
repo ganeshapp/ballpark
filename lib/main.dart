@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mental Math Trainer',
+      title: 'Ballpark',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         textTheme: GoogleFonts.interTextTheme(),

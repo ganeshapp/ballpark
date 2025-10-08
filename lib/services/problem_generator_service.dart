@@ -251,7 +251,7 @@ class ProblemGeneratorService {
     final answer = fixedCosts / (price - variableCosts);
 
     return Problem(
-      questionText: 'With fixed costs of ${_formatNumber(fixedCosts)}, a price of \$$price, and variable costs of \$$variableCosts, what is the breakeven volume?',
+      questionText: 'Fixed Cost: \$${_formatNumber(fixedCosts)}\nSales Price: \$$price\nVariable Cost: \$$variableCosts',
       actualAnswer: answer,
     );
   }

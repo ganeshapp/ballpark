@@ -35,7 +35,7 @@ extension GenreExtension on Genre {
       case Genre.compounding:
         return 'Compounding';
       case Genre.breakeven:
-        return 'Breakeven';
+        return 'Breakeven Volume';
       case Genre.weightedAverage:
         return 'Weighted Average';
       case Genre.scalingAndConversion:

@@ -106,74 +106,65 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         child: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
-              // Custom AppBar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Ballpark',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple.shade700,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.analytics_outlined, color: Colors.purple.shade700),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const StatsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              
-              Expanded(
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              Column(
+                children: [
+                  // Centered title and tagline
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Scrollable content area
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Tagline with help icon
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        'Directionally correct, incredibly fast',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          color: Colors.grey[700],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: Icon(Icons.help_outline, color: Colors.purple.shade400),
-                                      onPressed: _showOnboarding,
-                                      tooltip: 'How to play',
-                                    ),
-                                  ],
+                        Text(
+                          'Ballpark',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple.shade700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        // Tagline with help icon
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Directionally correct, incredibly fast',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                
-                                const SizedBox(height: 24),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: Icon(Icons.help_outline, color: Colors.purple.shade400),
+                              onPressed: _showOnboarding,
+                              tooltip: 'How to play',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Scrollable content area
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    const SizedBox(height: 24),
                                 
                                 // Today's Progress Card
                                 if (_todaysSessions > 0 || _streakDays > 0)
@@ -531,7 +522,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ],
           ),
-        ),
+          // Stats icon positioned in top-right
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(Icons.analytics_outlined, color: Colors.purple.shade700),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StatsScreen(),
+                  ),
+                );
+              },
+              tooltip: 'View Stats',
+            ),
+          ),
+        ],
+      ),
+    ),
       ),
     );
   }
