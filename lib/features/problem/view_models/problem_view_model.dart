@@ -68,7 +68,6 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
   final Duration _timeLimit;
   Timer? _timer;
   bool _isGeneratingProblem = false;
-  DateTime _sessionStartTime = DateTime.now();
 
   ProblemViewModel({
     required ProblemGeneratorService problemGenerator,
@@ -149,7 +148,6 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
     }
 
     print('KEYPAD DEBUG: Key pressed: $key, current input: "${state.userInput}"');
-    String newInput = state.userInput;
 
     switch (key) {
       case '+/-':
@@ -387,6 +385,14 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
       ? Duration(milliseconds: totalTime.inMilliseconds ~/ totalQuestions)
       : Duration.zero;
     
+    // Calculate average precision error
+    final totalPrecisionError = state.sessionResults.fold<double>(0.0, (sum, r) {
+      if (r.problem.actualAnswer == 0) return sum;
+      final error = ((r.userAnswer - r.problem.actualAnswer) / r.problem.actualAnswer).abs() * 100;
+      return sum + error;
+    });
+    final avgPrecisionError = totalQuestions > 0 ? totalPrecisionError / totalQuestions : 0.0;
+    
     return SessionSummary(
       totalQuestions: totalQuestions,
       correctAnswers: correctAnswers,
@@ -396,6 +402,7 @@ class ProblemViewModel extends StateNotifier<ProblemSessionState> {
       genre: _genre.displayName,
       precision: _precision,
       timeLimit: _timeLimit,
+      averagePrecisionError: avgPrecisionError,
     );
   }
   

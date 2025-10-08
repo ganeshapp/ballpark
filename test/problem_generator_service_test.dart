@@ -229,7 +229,7 @@ void main() {
           expect(problem, isA<Problem>());
           expect(problem.questionText, startsWith('After a '));
           expect(problem.questionText, endsWith('?'));
-          expect(problem.questionText, contains('% increase') || problem.questionText.contains('% decrease'));
+          expect(problem.questionText, anyOf([contains('% increase'), contains('% decrease')]));
           expect(problem.questionText, contains('revenue is \$'));
           
           // Extract percentage from question
@@ -254,10 +254,9 @@ void main() {
           expect(problem.questionText, contains(' to \$'));
           expect(problem.questionText, contains('what was the growth rate'));
           
-          // Extract old and new values
+          // Extract old value
           final parts = problem.questionText.split(' to \$');
           final oldValue = int.parse(parts[0].split('\$').last.replaceAll(',', ''));
-          final newValue = int.parse(parts[1].split(',').first.replaceAll(',', ''));
           
           expect(oldValue, greaterThanOrEqualTo(1000000));
           expect(oldValue, lessThanOrEqualTo(100000000));

@@ -145,30 +145,6 @@ class StatsViewModel extends StateNotifier<StatsState> {
     }).toList();
   }
 
-  OverallStats? get overallStats {
-    if (state.filteredSummaries.isEmpty) return null;
-    
-    final totalSessions = state.filteredSummaries.length;
-    final totalQuestions = state.filteredSummaries.fold<int>(0, (sum, s) => sum + s.totalQuestions);
-    final totalCorrectAnswers = state.filteredSummaries.fold<int>(0, (sum, s) => sum + s.correctAnswers);
-    final overallAccuracy = totalQuestions > 0 ? (totalCorrectAnswers / totalQuestions) * 100 : 0.0;
-    
-    // Calculate average time per question across all sessions
-    final totalTimeMs = state.filteredSummaries.fold<int>(0, (sum, s) => 
-        sum + (s.averageTimePerQuestion.inMilliseconds * s.totalQuestions));
-    final averageTimePerQuestion = totalQuestions > 0 
-        ? Duration(milliseconds: totalTimeMs ~/ totalQuestions)
-        : Duration.zero;
-    
-    return OverallStats(
-      totalSessions: totalSessions,
-      totalQuestions: totalQuestions,
-      totalCorrectAnswers: totalCorrectAnswers,
-      overallAccuracy: overallAccuracy,
-      averageTimePerQuestion: averageTimePerQuestion,
-      favoriteGenre: null, // Not used in filtered view
-    );
-  }
 
   Future<void> refresh() async {
     await _loadData();

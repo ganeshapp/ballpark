@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFF2563EB);
-  static const Color secondaryColor = Color(0xFF10B981);
-  static const Color errorColor = Color(0xFFEF4444);
-  static const Color warningColor = Color(0xFFF59E0B);
-  static const Color successColor = Color(0xFF10B981);
+  // Softer, more welcoming color palette
+  static const Color primaryColor = Color(0xFF9C7EE8); // Soft purple
+  static const Color secondaryColor = Color(0xFF6BB6F5); // Soft blue
+  static const Color accentColor = Color(0xFFF5A3C7); // Soft pink
+  static const Color errorColor = Color(0xFFFF8B94); // Soft red
+  static const Color warningColor = Color(0xFFFFD56F); // Soft amber
+  static const Color successColor = Color(0xFF90E39A); // Soft green
   
-  static const Color backgroundLight = Color(0xFFFAFAFA);
+  static const Color backgroundLight = Color(0xFFFAF9FC); // Slightly tinted
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color cardLight = Color(0xFFFFFFFF);
   
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF2D2640); // Softer dark purple
+  static const Color textSecondary = Color(0xFF7B7288); // Softer grey-purple
+  static const Color textTertiary = Color(0xFFB4ABC3); // Soft lavender-grey
 
   static ThemeData get lightTheme {
     return ThemeData(

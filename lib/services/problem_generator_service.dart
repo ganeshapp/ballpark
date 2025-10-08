@@ -35,46 +35,90 @@ class ProblemGeneratorService {
   }
 
   Problem _generateAdditionProblem() {
-    // Vary the magnitude of numbers
+    // Vary the magnitude of numbers - include billions now
     final magnitudes = [
       (1000, 10000),       // Thousands
       (10000, 100000),     // Tens of thousands
       (100000, 1000000),   // Hundreds of thousands
       (1000000, 10000000), // Millions
       (10000000, 100000000), // Tens of millions
-      (100000000, 500000000), // Hundreds of millions
+      (100000000, 1000000000), // Hundreds of millions
+      (1000000000, 4000000000), // Billions (capped to avoid overflow)
     ];
     
     final mag1 = magnitudes[_random.nextInt(magnitudes.length)];
-    final mag2 = magnitudes[_random.nextInt(magnitudes.length)];
+    int a = _generateNumberInRange(mag1.$1, mag1.$2);
+    int b;
     
-    final a = _generateNumberInRange(mag1.$1, mag1.$2);
-    final b = _generateNumberInRange(mag2.$1, mag2.$2);
+    // 50% chance: same magnitude, 50% chance: different but close magnitudes
+    if (_random.nextBool()) {
+      // Same magnitude
+      b = _generateNumberInRange(mag1.$1, mag1.$2);
+    } else {
+      // Different magnitude - ensure smaller is at least 15% of larger to make it meaningful
+      final isALarger = _random.nextBool();
+      if (isALarger) {
+        // b should be 15-80% of a
+        final minB = (a * 0.15).toInt();
+        final maxB = (a * 0.8).toInt();
+        b = _generateNumberInRange(minB, maxB);
+      } else {
+        // a should be 15-80% of b - so b should be larger
+        final minB = (a / 0.8).toInt().clamp(a + 1, 10000000000);
+        final maxB = (a / 0.15).toInt().clamp(minB, 10000000000);
+        if (minB < maxB) {
+          b = _generateNumberInRange(minB, maxB);
+        } else {
+          // Fallback to same magnitude if range calculation fails
+          b = _generateNumberInRange(mag1.$1, mag1.$2);
+        }
+      }
+    }
+    
     final answer = a + b;
 
     return Problem(
-      questionText: 'What is ${_formatNumber(a)} + ${_formatNumber(b)}?',
+      questionText: '${_formatNumber(a)} + ${_formatNumber(b)}',
       actualAnswer: answer.toDouble(),
     );
   }
 
   Problem _generateSubtractionProblem() {
-    // Vary the magnitude of numbers
+    // Vary the magnitude of numbers - include billions
     final magnitudes = [
       (10000, 100000),     // Tens of thousands
       (100000, 1000000),   // Hundreds of thousands
       (1000000, 10000000), // Millions
       (10000000, 100000000), // Tens of millions
-      (100000000, 500000000), // Hundreds of millions
+      (100000000, 1000000000), // Hundreds of millions
+      (1000000000, 4000000000), // Billions (capped to avoid overflow)
     ];
     
     final mag = magnitudes[_random.nextInt(magnitudes.length)];
-    final a = _generateNumberInRange(mag.$1, mag.$2);
-    final b = _generateNumberInRange(mag.$1 ~/ 2, a - 1000);
+    int a = _generateNumberInRange(mag.$1, mag.$2);
+    int b;
+    
+    // 50% chance: same magnitude, 50% chance: different but meaningful
+    if (_random.nextBool()) {
+      // Same magnitude - b should be less than a
+      final minB = mag.$1 ~/ 2;
+      final maxB = (a - (a ~/ 10)).clamp(minB, a - 1);
+      if (minB < maxB) {
+        b = _generateNumberInRange(minB, maxB);
+      } else {
+        b = _generateNumberInRange(minB, a - 1);
+      }
+    } else {
+      // Different magnitude - b should be 15-80% of a to make the 10% precision matter
+      final minB = (a * 0.15).toInt();
+      final maxB = (a * 0.8).toInt();
+      b = _generateNumberInRange(minB, maxB);
+    }
+    
     final answer = a - b;
 
     return Problem(
-      questionText: 'What is ${_formatNumber(a)} - ${_formatNumber(b)}?',
+      questionText: '${_formatNumber(a)} - ${_formatNumber(b)}',
       actualAnswer: answer.toDouble(),
     );
   }
@@ -90,23 +134,34 @@ class ProblemGeneratorService {
     
     final mag = magnitudes[_random.nextInt(magnitudes.length)];
     final a = _generateNumberInRange(mag.$1, mag.$2);
-    final b = _generateNumberInRange(2, 19);
+    final b = _generateNumberInRange(5, 9999);
     final answer = a * b;
 
     return Problem(
-      questionText: 'What is ${_formatNumber(a)} × ${_formatNumber(b)}?',
+      questionText: '${_formatNumber(a)} × ${_formatNumber(b)}',
       actualAnswer: answer.toDouble(),
     );
   }
 
   Problem _generateDivisionProblem() {
-    final b = _generateNumberInRange(2, 20);
-    final answer = _generateNumberInRange(10000, 1000000);
-    final a = answer * b;
+    // Generate dividend first
+    final magnitudes = [
+      (100000, 1000000),   // Hundreds of thousands
+      (1000000, 10000000), // Millions
+      (10000000, 100000000), // Tens of millions
+    ];
+    
+    final mag = magnitudes[_random.nextInt(magnitudes.length)];
+    final a = _generateNumberInRange(mag.$1, mag.$2);
+    
+    // Divisor should be 2-9999 and less than dividend
+    final maxB = a ~/ 2; // Ensure result is meaningful
+    final b = _generateNumberInRange(2, maxB.clamp(2, 9999));
+    final answer = a / b;
 
     return Problem(
-      questionText: 'What is ${_formatNumber(a)} ÷ ${_formatNumber(b)}?',
-      actualAnswer: answer.toDouble(),
+      questionText: '${_formatNumber(a)} ÷ ${_formatNumber(b)}',
+      actualAnswer: answer,
     );
   }
 
@@ -123,7 +178,7 @@ class ProblemGeneratorService {
     final answer = (number * percentage) / 100;
 
     return Problem(
-      questionText: 'What is $percentage% of ${_formatNumber(number)}?',
+      questionText: '$percentage% of ${_formatNumber(number)}',
       actualAnswer: answer,
     );
   }
@@ -169,6 +224,8 @@ class ProblemGeneratorService {
     final oldValue = _generateNumberInRange(mag.$1, mag.$2);
     final growthRate = _generateNumberInRange(5, 200);
     final newValue = oldValue * (1 + growthRate / 100);
+    // Answer stored as percentage (e.g., 50 for 50% growth)
+    // Users can enter either "0.5" or "50%" and both will be accepted
     final answer = growthRate.toDouble();
 
     return Problem(

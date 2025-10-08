@@ -12,13 +12,13 @@ import '../../results/screens/results_screen.dart';
 class ProblemScreen extends StatefulWidget {
   final Genre genre;
   final double precision;
-  final Duration timeLimit;
+  final Duration? timeLimit; // Optional for practice mode
 
   const ProblemScreen({
     super.key,
     required this.genre,
     required this.precision,
-    required this.timeLimit,
+    this.timeLimit, // Optional
   });
 
   @override
@@ -41,32 +41,38 @@ class _ProblemScreenState extends State<ProblemScreen> {
   bool _isAnswerCorrect = false;
   bool _timerStarted = false;
   DateTime? _questionStartTime;
+  Timer? _feedbackTimer;
 
   @override
   void initState() {
     super.initState();
-    _timeRemaining = widget.timeLimit;
+    _timeRemaining = widget.timeLimit ?? const Duration(hours: 24); // Effectively unlimited for practice mode
     _generateNewProblem();
-    // Timer will start after first answer is submitted
+    // Timer will start after first answer is submitted (if not practice mode)
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _feedbackTimer?.cancel();
     super.dispose();
   }
 
-  void _generateNewProblem() {
+  void _generateNewProblem({bool keepFeedback = false}) {
     setState(() {
       _currentProblem = _problemGenerator.generateProblem(widget.genre);
       _userInput = '';
-      _showFeedback = false;
-      _isAnswerCorrect = false;
+      if (!keepFeedback) {
+        _showFeedback = false;
+        _isAnswerCorrect = false;
+      }
       _questionStartTime = DateTime.now(); // Start timing this question
     });
   }
 
   void _startTimer() {
+    if (widget.timeLimit == null) return; // Don't start timer in practice mode
+    
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timeRemaining.inSeconds > 0) {
         setState(() {
@@ -193,8 +199,19 @@ class _ProblemScreenState extends State<ProblemScreen> {
     }
 
     try {
-      final userAnswer = _parseInputValue(_userInput);
+      double userAnswer = _parseInputValue(_userInput);
       final correctAnswer = _currentProblem!.actualAnswer;
+      
+      // Special handling for growth rate problems
+      // Users can enter either "0.5" (decimal) or "50%" (percentage)
+      // Both should be normalized to 50 for comparison
+      if (widget.genre == Genre.growthRate) {
+        // If user entered a small decimal (< 10), assume it's decimal form and convert to percentage
+        if (userAnswer < 10 && userAnswer > 0) {
+          userAnswer = userAnswer * 100;
+        }
+      }
+      
       final tolerance = (correctAnswer * widget.precision) / 100;
       final isCorrect = (userAnswer - correctAnswer).abs() <= tolerance;
 
@@ -221,10 +238,17 @@ class _ProblemScreenState extends State<ProblemScreen> {
         _isAnswerCorrect = isCorrect;
       });
 
-      // Show feedback briefly, then generate next problem
-      Future.delayed(const Duration(milliseconds: 1500), () {
+      // Move to next question immediately, keeping feedback visible
+      _generateNewProblem(keepFeedback: true);
+      
+      // Hide feedback after a short delay
+      _feedbackTimer?.cancel();
+      _feedbackTimer = Timer(const Duration(milliseconds: 800), () {
         if (_isSessionActive) {
-          _generateNewProblem();
+          setState(() {
+            _showFeedback = false;
+            _isAnswerCorrect = false;
+          });
         }
       });
     } catch (e) {
@@ -240,7 +264,10 @@ class _ProblemScreenState extends State<ProblemScreen> {
 
     if (_problemsCompleted > 0) {
       final accuracy = (_score / _problemsCompleted) * 100;
-      final totalTime = widget.timeLimit - _timeRemaining;
+      // For practice mode, calculate actual time spent from session results
+      final totalTime = widget.timeLimit != null
+          ? widget.timeLimit! - _timeRemaining
+          : _sessionResults.fold<Duration>(Duration.zero, (sum, r) => sum + r.timeTaken);
       final averageTime = Duration(milliseconds: totalTime.inMilliseconds ~/ _problemsCompleted);
 
       // Calculate average precision error (per question, then average)
@@ -263,7 +290,7 @@ class _ProblemScreenState extends State<ProblemScreen> {
         completedAt: DateTime.now(),
         genre: widget.genre.displayName,
         precision: widget.precision,
-        timeLimit: widget.timeLimit,
+        timeLimit: widget.timeLimit ?? const Duration(minutes: 999), // Use a large value for practice mode
         averagePrecisionError: avgPrecisionError,
       );
 
@@ -308,170 +335,223 @@ class _ProblemScreenState extends State<ProblemScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: _showFeedback 
-            ? (_isAnswerCorrect ? Colors.green.shade50 : Colors.red.shade50)
+        backgroundColor: _showFeedback
+            ? (_isAnswerCorrect ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE))
             : null,
         appBar: AppBar(
-          title: Text(widget.genre.displayName),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Circular progress timer (or infinity for practice mode)
+              widget.timeLimit == null
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF9C7EE8).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF9C7EE8).withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.all_inclusive, color: Color(0xFF9C7EE8), size: 18),
+                      ],
+                    ),
+                  )
+                : SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          value: _timeRemaining.inSeconds / widget.timeLimit!.inSeconds,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _timeRemaining.inSeconds > (widget.timeLimit!.inSeconds * 0.25)
+                                ? const Color(0xFF90E39A) // Soft green
+                                : const Color(0xFFFF8B94), // Soft red
+                          ),
+                          strokeWidth: 4,
+                        ),
+                        Text(
+                          '${_timeRemaining.inMinutes}:${(_timeRemaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                          style: TextStyle(
+                            color: _timeRemaining.inSeconds > (widget.timeLimit!.inSeconds * 0.25)
+                                ? const Color(0xFF90E39A) // Soft green
+                                : const Color(0xFFFF8B94), // Soft red
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              Text(
+                widget.genre.displayName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF90E39A).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF90E39A).withOpacity(0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, color: Color(0xFF90E39A), size: 14),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$_score/$_problemsCompleted',
+                      style: const TextStyle(
+                        color: Color(0xFF2D2640),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            children: [
-          // Timer and Score
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.timer, color: Colors.red, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_timeRemaining.inMinutes}:${(_timeRemaining.inSeconds % 60).toString().padLeft(2, '0')}',
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.green, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        '$_score/$_problemsCompleted',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Question
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Question Card
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate optimal width based on available height
+            final availableHeight = constraints.maxHeight;
+            final questionBoxHeight = 100.0;
+            final answerBoxHeight = 60.0;
+            final topSpacing = 16.0;
+            
+            // Remaining height for keypad (5 rows + enter row)
+            final keypadAvailableHeight = availableHeight - questionBoxHeight - answerBoxHeight - topSpacing - 100;
+            
+            // Each keypad button should be square, 5 rows of buttons
+            final buttonSize = keypadAvailableHeight / 5.5; // 5 rows + action row
+            
+            // Width = 4 buttons across + margins
+            final optimalWidth = (buttonSize * 4) + 40; // 40 for padding
+            
+            // Constrain between 380 and 500
+            final containerWidth = optimalWidth.clamp(380.0, 500.0);
+            
+            return Center(
+              child: Container(
+                width: containerWidth,
+                child: Column(
+                  children: [
+                    // Question and Answer section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Column(
                         children: [
-                          Text(
-                            'Question ${_problemsCompleted + 1}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.grey[600],
+                          // Question Card
+                          Container(
+                            height: questionBoxHeight,
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: containerWidth - 60, // Allow text to wrap
+                                  ),
+                                  child: Text(
+                                    _currentProblem?.questionText ?? 'Loading...',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      height: 1.25,
+                                      fontSize: 20,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _currentProblem?.questionText ?? 'Loading...',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              height: 1.3,
+
+                          const SizedBox(height: 8),
+
+                          // Answer Input
+                          Container(
+                            height: answerBoxHeight,
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
+                            child: Center(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _userInput.isEmpty ? '0' : _userInput,
+                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                    color: _userInput.isEmpty ? Colors.grey[400] : Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                    
+                    const Spacer(),
 
-                  const SizedBox(height: 16),
-
-                  // Answer Input
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                    // Keypad
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        border: Border(
+                          top: BorderSide(color: Colors.grey.shade300),
                         ),
-                      ],
-                    ),
-                    child: Text(
-                      _userInput.isEmpty ? '0' : _userInput,
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: _userInput.isEmpty ? Colors.grey[400] : Colors.black,
-                        fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.center,
+                      child: _buildKeypad(),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-
-          // Keypad
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade300),
-              ),
-            ),
-            child: _buildKeypad(),
-          ),
-            ],
-          ),
+            );
+          },
         ),
-      ),
       ),
     );
   }
@@ -479,21 +559,17 @@ class _ProblemScreenState extends State<ProblemScreen> {
   Widget _buildKeypad() {
     return Column(
       children: [
-        // First row: 1, 2, 3, +/-
-        _buildKeypadRow(['1', '2', '3', '+/-']),
-        const SizedBox(height: 12),
+        // First row: 7, 8, 9, %
+        _buildKeypadRow(['7', '8', '9', '%']),
         
-        // Second row: 4, 5, 6, %
-        _buildKeypadRow(['4', '5', '6', '%']),
-        const SizedBox(height: 12),
+        // Second row: 4, 5, 6, K
+        _buildKeypadRow(['4', '5', '6', 'K']),
         
-        // Third row: 7, 8, 9, K
-        _buildKeypadRow(['7', '8', '9', 'K']),
-        const SizedBox(height: 12),
+        // Third row: 1, 2, 3, M
+        _buildKeypadRow(['1', '2', '3', 'M']),
         
-        // Fourth row: ., 0, M, B
-        _buildKeypadRow(['.', '0', 'M', 'B']),
-        const SizedBox(height: 12),
+        // Fourth row: ., 0, +/-, B
+        _buildKeypadRow(['.', '0', '+/-', 'B']),
         
         // Fifth row: ENTER, ⌫
         _buildActionRow(),
@@ -514,12 +590,17 @@ class _ProblemScreenState extends State<ProblemScreen> {
       children: [
         Expanded(
           flex: 3,
-          child: _buildActionButton('ENTER', () => _onKeyPressed('ENTER')),
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            child: _buildActionButton('ENTER', () => _onKeyPressed('ENTER')),
+          ),
         ),
-        const SizedBox(width: 16),
         Expanded(
           flex: 1,
-          child: _buildActionButton('⌫', () => _onKeyPressed('⌫')),
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            child: _buildActionButton('⌫', () => _onKeyPressed('⌫')),
+          ),
         ),
       ],
     );
@@ -527,25 +608,40 @@ class _ProblemScreenState extends State<ProblemScreen> {
 
   Widget _buildKeypadButton(String text) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          onPressed: () => _onKeyPressed(text),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+      child: AspectRatio(
+        aspectRatio: 1.0, // Square buttons
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 1.0, end: 1.0),
+            duration: const Duration(milliseconds: 100),
+            builder: (context, scale, child) {
+              return Transform.scale(
+                scale: scale,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Trigger animation
+                    _onKeyPressed(text);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -553,25 +649,22 @@ class _ProblemScreenState extends State<ProblemScreen> {
   }
 
   Widget _buildActionButton(String text, VoidCallback onPressed) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: text == 'ENTER' ? Colors.green : Colors.orange,
-          foregroundColor: Colors.white,
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: text == 'ENTER' ? const Color(0xFF9C7EE8) : const Color(0xFFF5A3C7),
+        foregroundColor: Colors.white,
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 24), // Increased from 16 to 24
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18, // Slightly larger font
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

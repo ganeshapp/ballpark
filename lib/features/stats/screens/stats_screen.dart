@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../models/session_summary.dart';
 import '../../../services/local_storage_service.dart';
+import '../widgets/streak_calendar.dart';
 
 enum TimeView { daily, weekly, monthly }
 
@@ -101,6 +102,12 @@ class _StatsScreenState extends State<StatsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildFilters(),
+                          const SizedBox(height: 16),
+                          
+                          // Streak Calendar
+                          if (_allSummaries.isNotEmpty)
+                            StreakCalendar(summaries: _allSummaries),
+                          
                           const SizedBox(height: 16),
                           
                           // Warning banner if precision is 0 (old data)

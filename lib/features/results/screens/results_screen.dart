@@ -1,15 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../models/session_result.dart';
+import '../../../services/achievement_service.dart';
+import '../../../services/local_storage_service.dart';
 import '../../home/screens/home_screen.dart';
 
-class ResultsScreen extends StatelessWidget {
+class ResultsScreen extends StatefulWidget {
   final List<SessionResult> sessionResults;
 
   const ResultsScreen({
     super.key,
     required this.sessionResults,
   });
+
+  @override
+  State<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends State<ResultsScreen> with SingleTickerProviderStateMixin {
+  final AchievementService _achievementService = AchievementService();
+  final LocalStorageService _localStorage = LocalStorageService();
+  List<Achievement> _newAchievements = [];
+  bool _isNewRecord = false;
+  late AnimationController _celebrationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAchievementsAndRecords();
+    _celebrationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _celebrationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkAchievementsAndRecords() async {
+    final totalQuestions = widget.sessionResults.length;
+    final correctAnswers = widget.sessionResults.where((r) => r.isCorrect).length;
+    final accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0.0;
+    final totalTime = widget.sessionResults.fold<Duration>(
+      Duration.zero,
+      (sum, result) => sum + result.timeTaken,
+    );
+    final averageTime = totalQuestions > 0 
+        ? Duration(milliseconds: totalTime.inMilliseconds ~/ totalQuestions)
+        : Duration.zero;
+
+    // Get streak
+    final summaries = await _localStorage.getAllSummaries();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    int streak = 0;
+    if (summaries.isNotEmpty) {
+      final sortedDates = summaries.map((s) {
+        final date = s.completedAt;
+        return DateTime(date.year, date.month, date.day);
+      }).toSet().toList()..sort((a, b) => b.compareTo(a));
+      
+      if (sortedDates.isNotEmpty) {
+        var checkDate = today;
+        for (var date in sortedDates) {
+          if (date == checkDate) {
+            streak++;
+            checkDate = checkDate.subtract(const Duration(days: 1));
+          } else if (date.isBefore(checkDate)) {
+            break;
+          }
+        }
+      }
+    }
+    
+    // Check for achievements
+    final newAchievements = await _achievementService.checkAchievements(
+      correctAnswers: correctAnswers,
+      totalQuestions: totalQuestions,
+      sessionDuration: totalTime,
+      averageTimePerQuestion: averageTime,
+      streakDays: streak,
+    );
+    
+    // Check for personal best
+    final isNewRecord = await _achievementService.checkAndUpdatePersonalBest(
+      'accuracy',
+      accuracy,
+    );
+    
+    setState(() {
+      _newAchievements = newAchievements;
+      _isNewRecord = isNewRecord;
+    });
+  }
+
+  List<SessionResult> get sessionResults => widget.sessionResults;
 
   double _calculateErrorPercentage(double userAnswer, double correctAnswer) {
     if (correctAnswer == 0) return 0.0;
@@ -46,157 +133,288 @@ class ResultsScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Summary Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
+        child: Column(
+          children: [
+            // Scrollable content area
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Text(
-                      'Session Complete!',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
+                    // Summary Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [const Color(0xFFF3EFFC), const Color(0xFFE8F4FD)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF9C7EE8).withOpacity(0.3)),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(
-                          context,
-                          'Total Questions',
-                          totalQuestions.toString(),
-                          Icons.quiz,
-                          Colors.blue,
-                        ),
-                        _buildStatItem(
-                          context,
-                          'Correct Answers',
-                          correctAnswers.toString(),
-                          Icons.check_circle,
-                          Colors.green,
-                        ),
-                        _buildStatItem(
-                          context,
-                          'Accuracy',
-                          '${accuracy.toStringAsFixed(1)}%',
-                          Icons.track_changes,
-                          Colors.orange,
-                        ),
-                        _buildStatItem(
-                          context,
-                          'Avg Time',
-                          '${averageTime.inSeconds}s',
-                          Icons.timer,
-                          Colors.purple,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem(
-                          context,
-                          'Avg Precision',
-                          '±${averagePrecisionError.toStringAsFixed(1)}%',
-                          Icons.straighten,
-                          Colors.teal,
-                        ),
-                        _buildStatItem(
-                          context,
-                          'Estimation Bias',
-                          averageBias > 0 
-                              ? '+${averageBias.toStringAsFixed(1)}%' 
-                              : '${averageBias.toStringAsFixed(1)}%',
-                          averageBias > 0 ? Icons.trending_up : Icons.trending_down,
-                          averageBias > 0 ? Colors.red : Colors.blue,
-                        ),
-                      ],
-                    ),
-                    if (averageBias.abs() > 2)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          averageBias > 0 
-                              ? '📈 You tend to overestimate' 
-                              : '📉 You tend to underestimate',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                            fontStyle: FontStyle.italic,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Session Complete!',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF9C7EE8),
+                            ),
                           ),
-                        ),
+                          // New Record Banner
+                          if (_isNewRecord)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [const Color(0xFFFFD56F), const Color(0xFFFFA94D)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD56F).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.emoji_events, color: Colors.white, size: 24),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '🎉 NEW RECORD! 🎉',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatItem(
+                                context,
+                                'Total Questions',
+                                totalQuestions.toString(),
+                                Icons.quiz,
+                                const Color(0xFF6BB6F5),
+                              ),
+                              _buildStatItem(
+                                context,
+                                'Correct Answers',
+                                correctAnswers.toString(),
+                                Icons.check_circle,
+                                const Color(0xFF90E39A),
+                              ),
+                              _buildStatItem(
+                                context,
+                                'Accuracy',
+                                '${accuracy.toStringAsFixed(1)}%',
+                                Icons.track_changes,
+                                const Color(0xFFFFD56F),
+                              ),
+                              _buildStatItem(
+                                context,
+                                'Avg Time',
+                                '${averageTime.inSeconds}s',
+                                Icons.timer,
+                                const Color(0xFF9C7EE8),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildStatItem(
+                                context,
+                                'Avg Precision',
+                                '±${averagePrecisionError.toStringAsFixed(1)}%',
+                                Icons.straighten,
+                                const Color(0xFF6BB6F5),
+                              ),
+                              _buildStatItem(
+                                context,
+                                'Estimation Bias',
+                                averageBias > 0 
+                                    ? '+${averageBias.toStringAsFixed(1)}%' 
+                                    : '${averageBias.toStringAsFixed(1)}%',
+                                averageBias > 0 ? Icons.trending_up : Icons.trending_down,
+                                averageBias > 0 ? const Color(0xFFFF8B94) : const Color(0xFF6BB6F5),
+                              ),
+                            ],
+                          ),
+                          if (averageBias.abs() > 2)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                averageBias > 0 
+                                    ? '📈 You tend to overestimate' 
+                                    : '📉 You tend to underestimate',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Achievements Section
+                    if (_newAchievements.isNotEmpty)
+                      Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [const Color(0xFFF3EFFC), const Color(0xFFE8F4FD)],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF9C7EE8).withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.celebration, color: const Color(0xFF9C7EE8), size: 28),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'New Achievement${_newAchievements.length > 1 ? 's' : ''}!',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF9C7EE8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  alignment: WrapAlignment.center,
+                                  children: _newAchievements.map((achievement) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF9C7EE8).withOpacity(0.2),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            achievement.emoji,
+                                            style: const TextStyle(fontSize: 32),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            achievement.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            achievement.description,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[600],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+
+                    // Question Details Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.list, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Question Details',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Questions List
+                    ...sessionResults.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final result = entry.value;
+                      return _buildQuestionItem(context, result, index + 1);
+                    }).toList(),
                   ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 24),
-
-              // Questions List
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.list, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Question Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: sessionResults.length,
-                          itemBuilder: (context, index) {
-                            final result = sessionResults[index];
-                            return _buildQuestionItem(context, result, index + 1);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Done Button
-              SizedBox(
+            // Sticky Done Button at bottom
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
                 width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [const Color(0xFF9C7EE8), const Color(0xFF6BB6F5)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF9C7EE8).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
@@ -206,22 +424,33 @@ class ResultsScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text(
-                    'Done',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: Colors.white, size: 24),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Done',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -258,7 +487,9 @@ class ResultsScreen extends StatelessWidget {
 
   Widget _buildQuestionItem(BuildContext context, SessionResult result, int questionNumber) {
     final errorPercentage = _calculateErrorPercentage(result.userAnswer, result.problem.actualAnswer);
-    final errorAbs = errorPercentage.abs();
+    
+    // Check if this is a growth rate problem
+    final isGrowthRate = result.problem.questionText.toLowerCase().contains('growth rate');
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -312,7 +543,7 @@ class ResultsScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatNumber(result.userAnswer),
+                isGrowthRate ? '${result.userAnswer.toStringAsFixed(0)}%' : _formatNumber(result.userAnswer),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: result.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
                   fontWeight: FontWeight.w600,
@@ -326,7 +557,7 @@ class ResultsScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatNumber(result.problem.actualAnswer),
+                isGrowthRate ? '${result.problem.actualAnswer.toStringAsFixed(0)}%' : _formatNumber(result.problem.actualAnswer),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.green.shade700,
                   fontWeight: FontWeight.w600,
