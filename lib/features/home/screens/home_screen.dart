@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../models/genre.dart';
 import '../../problem/screens/problem_screen.dart';
 import '../../stats/screens/stats_screen.dart';
@@ -115,13 +116,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
                     child: Column(
                       children: [
-                        Text(
-                          'Ballpark',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple.shade700,
-                          ),
-                          textAlign: TextAlign.center,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/logo.svg',
+                              width: 40,
+                              height: 40,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Ballpark',
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple.shade700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         // Tagline with help icon

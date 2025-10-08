@@ -1,0 +1,9 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon Part -->
+  <g id="icon">
+    <path d="M45 22.5C45 34.9264 34.9264 45 22.5 45C10.0736 45 0 34.9264 0 22.5C0 10.0736 10.0736 0 22.5 0C34.9264 0 45 10.0736 45 22.5Z" fill="#A062B2" fill-opacity="0.1"/>
+    <path d="M42.5 22.5C42.5 11.4396 33.5604 2.5 22.5 2.5C11.4396 2.5 2.5 11.4396 2.5 22.5C2.5 33.5604 11.4396 42.5 22.5 42.5" stroke="#A062B2" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="22.5" cy="22.5" r="8" fill="#5A9CFF"/>
+  </g>
+</svg>
+
